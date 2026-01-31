@@ -1,6 +1,6 @@
 //
 //  MatchViewModel.swift
-//  MatchPoint
+//  FirstServe
 //
 //  Created by Cici on 1/30/26.
 //
@@ -8,10 +8,25 @@
 import Foundation
 import SwiftData
 
+/// Snapshot of a single point for undo support
+private struct PointSnapshot {
+    let pointsPlayer1: Int
+    let pointsPlayer2: Int
+    let gamesPlayer1: Int
+    let gamesPlayer2: Int
+    let gameCount: Int
+    let setCount: Int
+    let serverIsPlayer1: Bool
+    let matchComplete: Bool
+}
+
 @Observable
 final class MatchViewModel {
     var currentMatch: Match?
     private var modelContext: ModelContext?
+    
+    /// Stack of point snapshots for undo
+    private var undoStack: [PointSnapshot] = []
     
     init() {}
     
@@ -65,6 +80,19 @@ final class MatchViewModel {
               let set = match.currentSet,
               let game = set.currentGame else { return }
         
+        // Snapshot current state before awarding point (for undo)
+        let snapshot = PointSnapshot(
+            pointsPlayer1: game.pointsPlayer1,
+            pointsPlayer2: game.pointsPlayer2,
+            gamesPlayer1: set.gamesPlayer1,
+            gamesPlayer2: set.gamesPlayer2,
+            gameCount: set.games.count,
+            setCount: match.sets.count,
+            serverIsPlayer1: game.serverIsPlayer1,
+            matchComplete: match.isComplete
+        )
+        undoStack.append(snapshot)
+        
         game.awardPoint(toPlayer1: toPlayer1)
         
         // If game is complete, award the game
@@ -95,10 +123,44 @@ final class MatchViewModel {
         try? modelContext?.save()
     }
     
-    /// Undo last point (for mistakes)
+    /// Whether undo is available
+    var canUndo: Bool {
+        !undoStack.isEmpty && !(currentMatch?.isComplete ?? true)
+    }
+    
+    /// Undo the last awarded point
     func undoLastPoint() {
-        // TODO: Implement undo logic
-        // Would need to track point history
+        guard let match = currentMatch,
+              let snapshot = undoStack.last else { return }
+        
+        undoStack.removeLast()
+        
+        // If sets were added, remove them back to snapshot state
+        while match.sets.count > snapshot.setCount {
+            match.sets.removeLast()
+        }
+        
+        guard let set = match.sets.last else { return }
+        
+        // If games were added, remove them back to snapshot state
+        while set.games.count > snapshot.gameCount {
+            set.games.removeLast()
+        }
+        
+        // Restore set game counts
+        set.gamesPlayer1 = snapshot.gamesPlayer1
+        set.gamesPlayer2 = snapshot.gamesPlayer2
+        set.completedAt = nil  // Un-complete the set if it was completed
+        
+        // Restore game point counts
+        if let game = set.games.last {
+            game.pointsPlayer1 = snapshot.pointsPlayer1
+            game.pointsPlayer2 = snapshot.pointsPlayer2
+            game.completedAt = nil  // Un-complete the game if it was completed
+        }
+        
+        match.updatedAt = Date()
+        try? modelContext?.save()
     }
     
     // MARK: - Stats

@@ -1,6 +1,6 @@
 //
 //  LiveMatchView.swift
-//  MatchPoint
+//  FirstServe
 //
 //  Created by Cici on 1/30/26.
 //
@@ -231,6 +231,17 @@ struct LiveMatchView: View {
                     .cornerRadius(12)
                 }
             }
+            
+            // Undo button
+            Button {
+                viewModel.undoLastPoint()
+            } label: {
+                Label("Undo", systemImage: "arrow.uturn.left")
+                    .font(.subheadline)
+            }
+            .buttonStyle(.bordered)
+            .disabled(!viewModel.canUndo)
+            .opacity(viewModel.canUndo ? 1 : 0.4)
         }
     }
     
