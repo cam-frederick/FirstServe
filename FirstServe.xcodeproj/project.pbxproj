@@ -19,6 +19,12 @@
 		AA111111111111111111111C /* NewMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222C /* NewMatchView.swift */; };
 		AA111111111111111111111D /* MatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222D /* MatchViewModel.swift */; };
 		AA111111111111111111111E /* PlayerStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222E /* PlayerStatsView.swift */; };
+		BB111111111111111111111A /* GameScoringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB222222222222222222222A /* GameScoringTests.swift */; };
+		BB111111111111111111111B /* Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D5125DD9C190901963B4A5 /* Game.swift */; };
+		BB111111111111111111111C /* Match.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27910E1A03D07255C9D7A75D /* Match.swift */; };
+		BB111111111111111111111D /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E64E99A802D17315C586BFA /* Player.swift */; };
+		BB111111111111111111111E /* TennisSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE3510CA98E3A43B5C1C065 /* TennisSet.swift */; };
+		BB111111111111111111111F /* MatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222D /* MatchViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +41,8 @@
 		AA222222222222222222222C /* NewMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMatchView.swift; sourceTree = "<group>"; };
 		AA222222222222222222222D /* MatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchViewModel.swift; sourceTree = "<group>"; };
 		AA222222222222222222222E /* PlayerStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStatsView.swift; sourceTree = "<group>"; };
+		BB222222222222222222222A /* GameScoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScoringTests.swift; sourceTree = "<group>"; };
+		BB333333333333333333333A /* FirstServeTests */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FirstServeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -66,14 +74,24 @@
 			isa = PBXGroup;
 			children = (
 				2FC68188528D1CB001A2EF4D /* FirstServe */,
+				BB444444444444444444444A /* FirstServeTests */,
 				9BFA1565B950B62C0850EBB1 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		BB444444444444444444444A /* FirstServeTests */ = {
+			isa = PBXGroup;
+			children = (
+				BB222222222222222222222A /* GameScoringTests.swift */,
+			);
+			path = FirstServeTests;
 			sourceTree = "<group>";
 		};
 		9BFA1565B950B62C0850EBB1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				727BEF94E752EECEADBEB466 /* FirstServe.app */,
+				BB333333333333333333333A /* FirstServeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -126,7 +144,41 @@
 			productReference = 727BEF94E752EECEADBEB466 /* FirstServe.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BB555555555555555555555A /* FirstServeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB666666666666666666666A /* Build configuration list for PBXNativeTarget "FirstServeTests" */;
+			buildPhases = (
+				BB777777777777777777777A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BB888888888888888888888A /* PBXTargetDependency */,
+			);
+			name = FirstServeTests;
+			productName = FirstServeTests;
+			productReference = BB333333333333333333333A /* FirstServeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXTargetDependency section */
+		BB888888888888888888888A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 49DA3513376B9272E787BC4B /* FirstServe */;
+			targetProxy = BB999999999999999999999A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		BB999999999999999999999A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1610F364901012740652FC30 /* Project object */;
+			proxyType = 1;
+			remoteGlobalID_String = 49DA3513376B9272E787BC4B;
+			remoteInfo = FirstServe;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXProject section */
 		1610F364901012740652FC30 /* Project object */ = {
@@ -149,6 +201,7 @@
 			projectRoot = "";
 			targets = (
 				49DA3513376B9272E787BC4B /* FirstServe */,
+				BB555555555555555555555A /* FirstServeTests */,
 			);
 		};
 /* End PBXProject section */
@@ -180,6 +233,19 @@
 				AA111111111111111111111C /* NewMatchView.swift in Sources */,
 				AA111111111111111111111D /* MatchViewModel.swift in Sources */,
 				AA111111111111111111111E /* PlayerStatsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB777777777777777777777A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB111111111111111111111A /* GameScoringTests.swift in Sources */,
+				BB111111111111111111111B /* Game.swift in Sources */,
+				BB111111111111111111111C /* Match.swift in Sources */,
+				BB111111111111111111111D /* Player.swift in Sources */,
+				BB111111111111111111111E /* TennisSet.swift in Sources */,
+				BB111111111111111111111F /* MatchViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -369,6 +435,54 @@
 			};
 			name = Release;
 		};
+		BB666666666666666666666B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = QTX695U3Q9;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/\"/**",
+				);
+				INFOPLIST_FILE = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.Cam.FirstServeTests;
+				PRODUCT_NAME = FirstServeTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BB666666666666666666666C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = QTX695U3Q9;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/\"/**",
+				);
+				INFOPLIST_FILE = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.Cam.FirstServeTests;
+				PRODUCT_NAME = FirstServeTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -386,6 +500,15 @@
 			buildConfigurations = (
 				78C1C390CDC4FB0D5145049C /* Debug */,
 				0F2C3E3BE6A5092B688C21CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BB666666666666666666666A /* Build configuration list for PBXNativeTarget "FirstServeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB666666666666666666666B /* Debug */,
+				BB666666666666666666666C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
