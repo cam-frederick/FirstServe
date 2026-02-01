@@ -11,7 +11,9 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Match.createdAt, order: .reverse) private var matches: [Match]
+    @Query private var players: [Player]
     @State private var showingNewMatch = false
+    @State private var showingPlayerList = false
     
     var body: some View {
         NavigationStack {
@@ -24,6 +26,16 @@ struct HomeView: View {
             }
             .navigationTitle("FirstServe")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if !players.isEmpty {
+                        Button {
+                            showingPlayerList = true
+                        } label: {
+                            Image(systemName: "person.crop.circle")
+                        }
+                    }
+                }
+                
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingNewMatch = true
@@ -34,6 +46,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingNewMatch) {
                 NewMatchView()
+            }
+            .navigationDestination(isPresented: $showingPlayerList) {
+                PlayerListView()
             }
         }
     }

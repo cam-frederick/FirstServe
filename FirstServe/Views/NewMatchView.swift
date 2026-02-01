@@ -17,6 +17,7 @@ struct NewMatchView: View {
     @State private var selectedSurface: CourtSurface = .hardCourt
     @State private var selectedFormat: MatchFormat = .bestOf3
     @State private var location = ""
+    @State private var player1ServesFirst = true
     
     @State private var viewModel = MatchViewModel()
     @State private var navigateToMatch = false
@@ -30,6 +31,18 @@ struct NewMatchView: View {
                     
                     TextField("Opponent Name", text: $player2Name)
                         .textContentType(.name)
+                }
+                
+                if bothPlayersEntered {
+                    Section("First Serve") {
+                        Picker("Who serves first?", selection: $player1ServesFirst) {
+                            Text(player1Name.trimmingCharacters(in: .whitespaces))
+                                .tag(true)
+                            Text(player2Name.trimmingCharacters(in: .whitespaces))
+                                .tag(false)
+                        }
+                        .pickerStyle(.segmented)
+                    }
                 }
                 
                 Section("Match Details") {
@@ -73,9 +86,13 @@ struct NewMatchView: View {
         }
     }
     
-    private var canStartMatch: Bool {
+    private var bothPlayersEntered: Bool {
         !player1Name.trimmingCharacters(in: .whitespaces).isEmpty &&
         !player2Name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
+    private var canStartMatch: Bool {
+        bothPlayersEntered
     }
     
     private func startMatch() {
@@ -84,7 +101,8 @@ struct NewMatchView: View {
             player1Name: player1Name.trimmingCharacters(in: .whitespaces),
             player2Name: player2Name.trimmingCharacters(in: .whitespaces),
             format: selectedFormat,
-            surface: selectedSurface
+            surface: selectedSurface,
+            player1ServesFirst: player1ServesFirst
         )
         
         // Set location if provided

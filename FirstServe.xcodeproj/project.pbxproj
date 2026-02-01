@@ -18,6 +18,7 @@
 		AA111111111111111111111B /* LiveMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222B /* LiveMatchView.swift */; };
 		AA111111111111111111111C /* NewMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222C /* NewMatchView.swift */; };
 		AA111111111111111111111D /* MatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222D /* MatchViewModel.swift */; };
+		AA111111111111111111111E /* PlayerStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222E /* PlayerStatsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		AA222222222222222222222B /* LiveMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMatchView.swift; sourceTree = "<group>"; };
 		AA222222222222222222222C /* NewMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMatchView.swift; sourceTree = "<group>"; };
 		AA222222222222222222222D /* MatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchViewModel.swift; sourceTree = "<group>"; };
+		AA222222222222222222222E /* PlayerStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStatsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -82,6 +84,7 @@
 				AA222222222222222222222A /* HomeView.swift */,
 				AA222222222222222222222B /* LiveMatchView.swift */,
 				AA222222222222222222222C /* NewMatchView.swift */,
+				AA222222222222222222222E /* PlayerStatsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -176,6 +179,7 @@
 				AA111111111111111111111B /* LiveMatchView.swift in Sources */,
 				AA111111111111111111111C /* NewMatchView.swift in Sources */,
 				AA111111111111111111111D /* MatchViewModel.swift in Sources */,
+				AA111111111111111111111E /* PlayerStatsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

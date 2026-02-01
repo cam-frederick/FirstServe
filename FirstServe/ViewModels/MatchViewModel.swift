@@ -40,7 +40,7 @@ final class MatchViewModel {
     // MARK: - Match Management
     
     /// Start a new match
-    func startNewMatch(player1Name: String, player2Name: String, format: MatchFormat, surface: CourtSurface) {
+    func startNewMatch(player1Name: String, player2Name: String, format: MatchFormat, surface: CourtSurface, player1ServesFirst: Bool = true) {
         guard let context = modelContext else { return }
         
         let player1 = Player(name: player1Name)
@@ -55,9 +55,9 @@ final class MatchViewModel {
         // Start first set
         match.startNewSet()
         
-        // Start first game (player 1 serves)
+        // Start first game (serve based on selection)
         if let firstSet = match.currentSet {
-            firstSet.startNewGame(serverIsPlayer1: true)
+            firstSet.startNewGame(serverIsPlayer1: player1ServesFirst)
         }
         
         currentMatch = match
