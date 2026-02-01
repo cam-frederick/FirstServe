@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "49DA3513376B9272E787BC4B"
-               BuildableName = "MatchPoint.app"
-               BlueprintName = "MatchPoint"
-               ReferencedContainer = "container:MatchPoint.xcodeproj">
+               BuildableName = "FirstServe.app"
+               BlueprintName = "FirstServe"
+               ReferencedContainer = "container:FirstServe.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49DA3513376B9272E787BC4B"
-            BuildableName = "MatchPoint.app"
-            BlueprintName = "MatchPoint"
-            ReferencedContainer = "container:MatchPoint.xcodeproj">
+            BuildableName = "FirstServe.app"
+            BlueprintName = "FirstServe"
+            ReferencedContainer = "container:FirstServe.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -58,9 +58,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49DA3513376B9272E787BC4B"
-            BuildableName = "MatchPoint.app"
-            BlueprintName = "MatchPoint"
-            ReferencedContainer = "container:MatchPoint.xcodeproj">
+            BuildableName = "FirstServe.app"
+            BlueprintName = "FirstServe"
+            ReferencedContainer = "container:FirstServe.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -77,9 +77,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49DA3513376B9272E787BC4B"
-            BuildableName = "MatchPoint.app"
-            BlueprintName = "MatchPoint"
-            ReferencedContainer = "container:MatchPoint.xcodeproj">
+            BuildableName = "FirstServe.app"
+            BlueprintName = "FirstServe"
+            ReferencedContainer = "container:FirstServe.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>

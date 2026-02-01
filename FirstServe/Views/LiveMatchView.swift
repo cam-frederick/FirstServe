@@ -159,14 +159,19 @@ struct LiveMatchView: View {
     
     private var currentGameScore: some View {
         VStack(spacing: 8) {
-            Text("Current Game")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            
-            if let game = match.currentSet?.currentGame {
+            if let currentSet = match.currentSet, currentSet.isTiebreak {
+                // Tiebreak display
+                Text("TIEBREAK")
+                    .font(.headline)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(Color.orange.opacity(0.15))
+                    .cornerRadius(8)
+                
                 HStack(spacing: 40) {
                     VStack {
-                        Text(game.scoreString(forPlayer1: true))
+                        Text("\(currentSet.tiebreakScorePlayer1 ?? 0)")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
                         Text(match.players.first?.name ?? "P1")
                             .font(.caption)
@@ -178,11 +183,44 @@ struct LiveMatchView: View {
                         .foregroundStyle(.secondary)
                     
                     VStack {
-                        Text(game.scoreString(forPlayer1: false))
+                        Text("\(currentSet.tiebreakScorePlayer2 ?? 0)")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
                         Text(match.players.last?.name ?? "P2")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                }
+                
+                Text("First to 7, win by 2")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                // Regular game display
+                Text("Current Game")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                if let game = match.currentSet?.currentGame {
+                    HStack(spacing: 40) {
+                        VStack {
+                            Text(game.scoreString(forPlayer1: true))
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                            Text(match.players.first?.name ?? "P1")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Text("-")
+                            .font(.title)
+                            .foregroundStyle(.secondary)
+                        
+                        VStack {
+                            Text(game.scoreString(forPlayer1: false))
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                            Text(match.players.last?.name ?? "P2")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }

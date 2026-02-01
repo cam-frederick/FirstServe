@@ -18,6 +18,8 @@ private struct PointSnapshot {
     let setCount: Int
     let serverIsPlayer1: Bool
     let matchComplete: Bool
+    let tiebreakPointsPlayer1: Int?
+    let tiebreakPointsPlayer2: Int?
 }
 
 @Observable
@@ -89,10 +91,25 @@ final class MatchViewModel {
             gameCount: set.games.count,
             setCount: match.sets.count,
             serverIsPlayer1: game.serverIsPlayer1,
-            matchComplete: match.isComplete
+            matchComplete: match.isComplete,
+            tiebreakPointsPlayer1: set.tiebreakScorePlayer1,
+            tiebreakPointsPlayer2: set.tiebreakScorePlayer2
         )
         undoStack.append(snapshot)
         
+        // Check if we're in a tiebreak
+        if set.isTiebreak {
+            awardTiebreakPoint(toPlayer1: toPlayer1, match: match, set: set, game: game)
+        } else {
+            awardRegularPoint(toPlayer1: toPlayer1, match: match, set: set, game: game)
+        }
+        
+        match.updatedAt = Date()
+        try? modelContext?.save()
+    }
+    
+    /// Award point during regular game
+    private func awardRegularPoint(toPlayer1: Bool, match: Match, set: TennisSet, game: Game) {
         game.awardPoint(toPlayer1: toPlayer1)
         
         // If game is complete, award the game
@@ -112,15 +129,77 @@ final class MatchViewModel {
                         newSet.startNewGame(serverIsPlayer1: player1ServesFirst)
                     }
                 }
+            } else if set.isTiebreak {
+                // We just reached 6-6, start tiebreak
+                // In tiebreak, Player 1 serves first point, then alternate every 2
+                set.tiebreakScorePlayer1 = 0
+                set.tiebreakScorePlayer2 = 0
+                // Keep the same game but switch to tiebreak mode
+                // The player who would serve next in rotation serves first in tiebreak
+                let nextServerIsPlayer1 = !game.serverIsPlayer1
+                set.startNewGame(serverIsPlayer1: nextServerIsPlayer1)
             } else {
                 // Start next game (alternate server)
                 let nextServerIsPlayer1 = !game.serverIsPlayer1
                 set.startNewGame(serverIsPlayer1: nextServerIsPlayer1)
             }
         }
+    }
+    
+    /// Award point during tiebreak
+    private func awardTiebreakPoint(toPlayer1: Bool, match: Match, set: TennisSet, game: Game) {
+        // Initialize tiebreak scores if needed
+        if set.tiebreakScorePlayer1 == nil {
+            set.tiebreakScorePlayer1 = 0
+            set.tiebreakScorePlayer2 = 0
+        }
         
-        match.updatedAt = Date()
-        try? modelContext?.save()
+        // Award the point
+        if toPlayer1 {
+            set.tiebreakScorePlayer1! += 1
+        } else {
+            set.tiebreakScorePlayer2! += 1
+        }
+        
+        let p1Score = set.tiebreakScorePlayer1!
+        let p2Score = set.tiebreakScorePlayer2!
+        let totalPoints = p1Score + p2Score
+        
+        // Check if tiebreak is won (first to 7 with 2-point lead)
+        let tiebreakWon = (p1Score >= 7 || p2Score >= 7) && abs(p1Score - p2Score) >= 2
+        
+        if tiebreakWon {
+            // Award the set to the winner
+            set.awardGame(toPlayer1: p1Score > p2Score)
+            
+            // Start new set if match continues
+            if !match.isComplete {
+                match.startNewSet()
+                
+                // The player who served first in the tiebreak serves first in the new set
+                // (opposite of whoever served the last point before tiebreak)
+                if let newSet = match.currentSet {
+                    let tiebreakFirstServer = game.serverIsPlayer1
+                    newSet.startNewGame(serverIsPlayer1: !tiebreakFirstServer)
+                }
+            }
+        } else {
+            // Handle serve rotation in tiebreak
+            // First point: Player A serves
+            // Points 2-3: Player B serves
+            // Points 4-5: Player A serves
+            // etc. (alternate every 2 points after first)
+            
+            if totalPoints == 1 {
+                // After first point, switch server
+                game.serverIsPlayer1 = !game.serverIsPlayer1
+            } else if totalPoints > 1 && (totalPoints - 1) % 2 == 0 {
+                // After every 2 points (starting from point 2), switch server
+                game.serverIsPlayer1 = !game.serverIsPlayer1
+            }
+            
+            // Also switch ends every 6 points (optional, UI can handle this)
+        }
     }
     
     /// Whether undo is available
@@ -152,10 +231,15 @@ final class MatchViewModel {
         set.gamesPlayer2 = snapshot.gamesPlayer2
         set.completedAt = nil  // Un-complete the set if it was completed
         
+        // Restore tiebreak scores
+        set.tiebreakScorePlayer1 = snapshot.tiebreakPointsPlayer1
+        set.tiebreakScorePlayer2 = snapshot.tiebreakPointsPlayer2
+        
         // Restore game point counts
         if let game = set.games.last {
             game.pointsPlayer1 = snapshot.pointsPlayer1
             game.pointsPlayer2 = snapshot.pointsPlayer2
+            game.serverIsPlayer1 = snapshot.serverIsPlayer1
             game.completedAt = nil  // Un-complete the game if it was completed
         }
         
@@ -225,5 +309,20 @@ final class MatchViewModel {
     
     var matchIsComplete: Bool {
         currentMatch?.isComplete ?? false
+    }
+    
+    /// Is the current set in a tiebreak?
+    var isInTiebreak: Bool {
+        currentMatch?.currentSet?.isTiebreak ?? false
+    }
+    
+    /// Tiebreak score for player 1 (nil if not in tiebreak)
+    var tiebreakScorePlayer1: Int? {
+        currentMatch?.currentSet?.tiebreakScorePlayer1
+    }
+    
+    /// Tiebreak score for player 2 (nil if not in tiebreak)
+    var tiebreakScorePlayer2: Int? {
+        currentMatch?.currentSet?.tiebreakScorePlayer2
     }
 }
