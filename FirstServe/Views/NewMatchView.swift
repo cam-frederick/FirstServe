@@ -28,9 +28,11 @@ struct NewMatchView: View {
                 Section("Players") {
                     TextField("Your Name", text: $player1Name)
                         .textContentType(.name)
+                        .accessibilityIdentifier("player1NameField")
                     
                     TextField("Opponent Name", text: $player2Name)
                         .textContentType(.name)
+                        .accessibilityIdentifier("player2NameField")
                 }
                 
                 if bothPlayersEntered {
@@ -76,6 +78,7 @@ struct NewMatchView: View {
                         startMatch()
                     }
                     .disabled(!canStartMatch)
+                    .accessibilityIdentifier("startMatchButton")
                 }
             }
             .navigationDestination(isPresented: $navigateToMatch) {

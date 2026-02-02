@@ -62,6 +62,7 @@ struct HomeView: View {
             Text("No Matches Yet")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .accessibilityIdentifier("emptyStateMessage")
             
             Text("Tap + to start your first match")
                 .foregroundStyle(.secondary)
@@ -71,6 +72,7 @@ struct HomeView: View {
             }
             .buttonStyle(.borderedProminent)
             .padding(.top)
+            .accessibilityIdentifier("startNewMatchButton")
         }
     }
     

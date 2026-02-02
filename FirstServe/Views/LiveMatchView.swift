@@ -252,6 +252,7 @@ struct LiveMatchView: View {
                     .foregroundStyle(.blue)
                     .cornerRadius(12)
                 }
+                .accessibilityIdentifier("player1ScoreButton")
                 
                 Button {
                     viewModel.awardPoint(toPlayer1: false)
@@ -268,6 +269,7 @@ struct LiveMatchView: View {
                     .foregroundStyle(.green)
                     .cornerRadius(12)
                 }
+                .accessibilityIdentifier("player2ScoreButton")
             }
             
             // Undo button
@@ -280,6 +282,7 @@ struct LiveMatchView: View {
             .buttonStyle(.bordered)
             .disabled(!viewModel.canUndo)
             .opacity(viewModel.canUndo ? 1 : 0.4)
+            .accessibilityIdentifier("undoButton")
         }
     }
     
