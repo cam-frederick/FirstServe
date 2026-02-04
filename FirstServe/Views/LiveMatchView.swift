@@ -46,7 +46,17 @@ struct LiveMatchView: View {
                         }
                     }
                     .padding()
-                }
+                    // Swipe-left-to-undo gesture (FS-T9)
+                    .gesture(
+                        DragGesture(minimumDistance: 40)
+                            .onEnded { value in
+                                let isHorizontal = abs(value.translation.width) > abs(value.translation.height) * 1.5
+                                if isHorizontal && value.translation.width < -80 && viewModel.canUndo && !match.isComplete {
+                                    viewModel.undoLastPoint()
+                                    triggerHaptic(.light)
+                                }
+                            }
+                    )
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
