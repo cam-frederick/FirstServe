@@ -17,12 +17,16 @@ struct LiveMatchView: View {
     @State private var viewModel = MatchViewModel()
     @State private var showingEndMatchAlert = false
     @State private var showingStatsSheet = false
+    @Environment(\.colorScheme) private var colorScheme
     
     /// Drives the match-win confetti overlay
     @State private var showMatchConfetti = false
     
     /// Tracks the previous completion state so we fire confetti exactly once
     @State private var wasComplete = false
+    
+    /// Opacity for scoring button backgrounds — slightly higher in dark mode for legibility.
+    private var buttonBgOpacity: Double { colorScheme == .dark ? 0.18 : 0.10 }
     
     var body: some View {
         ZStack {
@@ -275,7 +279,7 @@ struct LiveMatchView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
-                    .background(Color.blue.opacity(0.1))
+                    .background(Color.blue.opacity(buttonBgOpacity))
                     .foregroundStyle(.blue)
                     .cornerRadius(12)
                 }
@@ -296,7 +300,7 @@ struct LiveMatchView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
-                    .background(Color.green.opacity(0.1))
+                    .background(Color.green.opacity(buttonBgOpacity))
                     .foregroundStyle(.green)
                     .cornerRadius(12)
                 }
