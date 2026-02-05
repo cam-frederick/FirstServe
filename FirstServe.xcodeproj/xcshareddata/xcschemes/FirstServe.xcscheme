@@ -15,9 +15,23 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "49DA3513376B9272E787BC4B"
+               BlueprintIdentifier = "076E022957B509E8D8DF0331"
                BuildableName = "FirstServe.app"
                BlueprintName = "FirstServe"
+               ReferencedContainer = "container:FirstServe.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A2C807945A5FD71F620DB066"
+               BuildableName = "FirstServeTests.xctest"
+               BlueprintName = "FirstServeTests"
                ReferencedContainer = "container:FirstServe.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,7 +46,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "49DA3513376B9272E787BC4B"
+            BlueprintIdentifier = "076E022957B509E8D8DF0331"
             BuildableName = "FirstServe.app"
             BlueprintName = "FirstServe"
             ReferencedContainer = "container:FirstServe.xcodeproj">
@@ -40,10 +54,11 @@
       </MacroExpansion>
       <Testables>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BB555555555555555555555A"
+               BlueprintIdentifier = "A2C807945A5FD71F620DB066"
                BuildableName = "FirstServeTests.xctest"
                BlueprintName = "FirstServeTests"
                ReferencedContainer = "container:FirstServe.xcodeproj">
@@ -67,7 +82,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "49DA3513376B9272E787BC4B"
+            BlueprintIdentifier = "076E022957B509E8D8DF0331"
             BuildableName = "FirstServe.app"
             BlueprintName = "FirstServe"
             ReferencedContainer = "container:FirstServe.xcodeproj">
@@ -86,7 +101,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "49DA3513376B9272E787BC4B"
+            BlueprintIdentifier = "076E022957B509E8D8DF0331"
             BuildableName = "FirstServe.app"
             BlueprintName = "FirstServe"
             ReferencedContainer = "container:FirstServe.xcodeproj">
