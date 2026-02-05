@@ -10,6 +10,7 @@
 		1027A194F04AD087D1C3BEAF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 320A5F5F630805657E60A5B1 /* Assets.xcassets */; };
 		38E2DAD6FC40FCC027CE270E /* Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D5125DD9C190901963B4A5 /* Game.swift */; };
 		3DAA1051EAE65D21D97B0844 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6235BC66AAC41C280EC5509 /* Preview Assets.xcassets */; };
+		548E8A452F3433F900DAC8D3 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 548E8A442F3433F900DAC8D3 /* SplashScreenView.swift */; };
 		5D5B0D64A75ED7A426D99761 /* TennisSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE3510CA98E3A43B5C1C065 /* TennisSet.swift */; };
 		AA111111111111111111111A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222A /* HomeView.swift */; };
 		AA111111111111111111111B /* LiveMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222222222222222222222B /* LiveMatchView.swift */; };
@@ -40,6 +41,7 @@
 /* Begin PBXFileReference section */
 		27910E1A03D07255C9D7A75D /* Match.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Match.swift; sourceTree = "<group>"; };
 		320A5F5F630805657E60A5B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		548E8A442F3433F900DAC8D3 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
 		57C2D424A7CDD898E9B6CF03 /* FirstServeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstServeApp.swift; sourceTree = "<group>"; };
 		5E64E99A802D17315C586BFA /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
 		727BEF94E752EECEADBEB466 /* FirstServe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FirstServe.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -101,6 +103,7 @@
 		A1C15E71D530D0B016E7FE9E /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				548E8A442F3433F900DAC8D3 /* SplashScreenView.swift */,
 				AA222222222222222222222A /* HomeView.swift */,
 				AA222222222222222222222B /* LiveMatchView.swift */,
 				AA222222222222222222222C /* NewMatchView.swift */,
@@ -232,6 +235,7 @@
 				AB8BB0E977EF845A8F6C54E5 /* Match.swift in Sources */,
 				F776F98DDBCF8A27ACFEC5EC /* FirstServeApp.swift in Sources */,
 				B3BC85FD631C5F12773D184F /* Player.swift in Sources */,
+				548E8A452F3433F900DAC8D3 /* SplashScreenView.swift in Sources */,
 				5D5B0D64A75ED7A426D99761 /* TennisSet.swift in Sources */,
 				AA111111111111111111111A /* HomeView.swift in Sources */,
 				AA111111111111111111111B /* LiveMatchView.swift in Sources */,
