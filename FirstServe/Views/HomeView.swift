@@ -507,11 +507,57 @@ struct MatchDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(item: generateShareText()) {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundStyle(FSColors.textPrimary)
+                }
+            }
+        }
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) {
                 appearAnimation = true
             }
         }
+    }
+    
+    // MARK: - Share Functionality
+    
+    private func generateShareText() -> String {
+        var text = "🎾 FirstServe Match Result\n\n"
+        
+        // Winner announcement
+        if let winner = match.winner {
+            text += "\(winner.name) wins!\n"
+        }
+        
+        // Score
+        text += "\(match.scoreString)\n\n"
+        
+        // Match info
+        text += "📍 \(match.surface.rawValue)\n"
+        text += "🏆 \(match.format.rawValue)\n"
+        
+        // Duration if available
+        if let dur = duration {
+            text += "⏱️ \(dur)\n"
+        }
+        
+        // Key stats if notable
+        let totalAces = match.acesPlayer1 + match.acesPlayer2
+        let totalWinners = match.winnersPlayer1 + match.winnersPlayer2
+        
+        if totalAces > 0 {
+            text += "⚡ \(totalAces) aces\n"
+        }
+        if totalWinners > 0 {
+            text += "⭐ \(totalWinners) winners\n"
+        }
+        
+        text += "\n#FirstServe #Tennis"
+        
+        return text
     }
 
     // MARK: - Winner Section

@@ -633,21 +633,92 @@ struct LiveMatchView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(match.winner?.name ?? "Unknown") wins! Final score: \(match.scoreString)")
 
-            Button {
-                showingStatsSheet = true
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("View Match Stats")
+            HStack(spacing: 12) {
+                // Share button
+                ShareLink(item: generateShareText()) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Share Result")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(FSColors.courtGreen)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                    .fontWeight(.semibold)
                 }
+                .buttonStyle(.plain)
+                
+                // Stats button
+                Button {
+                    showingStatsSheet = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("View Stats")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(FSColors.championship)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                    .fontWeight(.semibold)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(FSPrimaryButtonStyle(color: FSColors.championship))
             .padding(.top, 16)
             .accessibilityLabel("View match statistics")
             .accessibilityHint("Double tap to view detailed match statistics")
         }
         .padding(.vertical, 40)
+    }
+    
+    // MARK: - Share Functionality
+    
+    private func generateShareText() -> String {
+        var text = "🎾 FirstServe Match Result\n\n"
+        
+        // Winner announcement
+        if let winner = match.winner {
+            text += "\(winner.name) wins!\n"
+        }
+        
+        // Score
+        text += "\(match.scoreString)\n\n"
+        
+        // Match info
+        text += "📍 \(match.surface.rawValue)\n"
+        text += "🏆 \(match.format.rawValue)\n"
+        
+        // Duration if available
+        if let completedAt = match.completedAt {
+            let duration = completedAt.timeIntervalSince(match.createdAt)
+            let minutes = Int(duration) / 60
+            if minutes < 60 {
+                text += "⏱️ \(minutes)m\n"
+            } else {
+                let hours = minutes / 60
+                let mins = minutes % 60
+                text += "⏱️ \(hours)h \(mins)m\n"
+            }
+        }
+        
+        // Key stats if notable
+        let totalAces = match.acesPlayer1 + match.acesPlayer2
+        let totalWinners = match.winnersPlayer1 + match.winnersPlayer2
+        
+        if totalAces > 0 {
+            text += "⚡ \(totalAces) aces\n"
+        }
+        if totalWinners > 0 {
+            text += "⭐ \(totalWinners) winners\n"
+        }
+        
+        text += "\n#FirstServe #Tennis"
+        
+        return text
     }
 }
 
