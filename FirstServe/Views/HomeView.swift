@@ -57,6 +57,8 @@ struct HomeView: View {
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(FSColors.textSecondary)
                         }
+                        .accessibilityLabel("View players")
+                        .accessibilityHint("Double tap to view and manage players")
                     }
                 }
 
@@ -73,6 +75,8 @@ struct HomeView: View {
                                     .fill(FSColors.courtGreen)
                             )
                     }
+                    .accessibilityLabel("New match")
+                    .accessibilityHint("Double tap to start a new match")
                 }
             }
             .sheet(isPresented: $showingNewMatch) {
@@ -122,6 +126,8 @@ struct HomeView: View {
                             .foregroundStyle(FSColors.textMuted)
                     }
                     .padding(.top, 8)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(matches.count) \(matches.count == 1 ? "match" : "matches") recorded")
                 }
             }
 
@@ -202,6 +208,8 @@ struct HomeView: View {
             }
             .buttonStyle(FSPrimaryButtonStyle())
             .padding(.top, 8)
+            .accessibilityLabel("Start new match")
+            .accessibilityHint("Double tap to create your first tennis match")
 
             Spacer()
         }
@@ -285,6 +293,25 @@ struct MatchCard: View {
 
     private var player1: Player? { match.players.first }
     private var player2: Player? { match.players.last }
+    
+    private var accessibilityLabel: String {
+        var label = ""
+        if isActive {
+            label += "Live match. "
+        } else if let winner = match.winner {
+            label += "\(winner.name) won. "
+        }
+        
+        label += "\(player1?.name ?? "Player 1") vs \(player2?.name ?? "Player 2"). "
+        
+        if !match.scoreString.isEmpty {
+            label += "Score: \(match.scoreString). "
+        }
+        
+        label += "Played on \(match.surface.rawValue)"
+        
+        return label
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -380,6 +407,9 @@ struct MatchCard: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: Color.black.opacity(0.3), radius: 15, y: 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Double tap to \(isActive ? "continue" : "view details of") this match")
     }
 
     private func playerRow(name: String, isWinner: Bool, isServing: Bool) -> some View {

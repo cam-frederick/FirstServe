@@ -81,6 +81,8 @@ struct LiveMatchView: View {
                             .font(FSTypography.label(12))
                             .foregroundStyle(FSColors.fault)
                     }
+                    .accessibilityLabel("End match early")
+                    .accessibilityHint("Double tap to end the match before completion")
                 }
             }
         }
@@ -125,6 +127,8 @@ struct LiveMatchView: View {
                 Capsule()
                     .fill(match.surface.themeColor.opacity(0.15))
             )
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Surface: \(match.surface.rawValue)")
 
             Spacer()
 
@@ -137,6 +141,8 @@ struct LiveMatchView: View {
                         .tracking(1)
                         .foregroundStyle(FSColors.ace)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Match in progress")
             }
 
             Spacer()
@@ -146,6 +152,7 @@ struct LiveMatchView: View {
                 .font(FSTypography.label(10))
                 .tracking(0.5)
                 .foregroundStyle(FSColors.textMuted)
+                .accessibilityLabel("Format: \(match.format.rawValue)")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -237,11 +244,33 @@ struct LiveMatchView: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(isCurrentSet ? FSColors.backgroundElevated : Color.clear)
                         )
+                        .accessibilityLabel("Set \(index + 1): \(games) games")
                 }
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 18)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(buildPlayerRowAccessibilityLabel(name: name, isPlayer1: isPlayer1, isServing: isServing, isWinner: isWinner))
+    }
+    
+    private func buildPlayerRowAccessibilityLabel(name: String, isPlayer1: Bool, isServing: Bool, isWinner: Bool) -> String {
+        var label = name
+        if isWinner {
+            label += ", winner"
+        }
+        if isServing && !match.isComplete {
+            label += ", currently serving"
+        }
+        
+        // Add set scores
+        let sets = match.sets.enumerated().map { index, set -> String in
+            let games = isPlayer1 ? set.gamesPlayer1 : set.gamesPlayer2
+            return "Set \(index + 1): \(games)"
+        }.joined(separator: ", ")
+        
+        label += ". " + sets
+        return label
     }
 
     // MARK: - Current Game Score
@@ -313,6 +342,8 @@ struct LiveMatchView: View {
                 .font(FSTypography.label(10))
                 .foregroundStyle(FSColors.textMuted)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Tiebreak: \(player1?.name ?? "Player 1") \(set.tiebreakScorePlayer1 ?? 0), \(player2?.name ?? "Player 2") \(set.tiebreakScorePlayer2 ?? 0). First to 7, win by 2")
     }
 
     private func regularGameScoreDisplay(game: Game) -> some View {
@@ -350,6 +381,8 @@ struct LiveMatchView: View {
                 }
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Current game: \(player1?.name ?? "Player 1") \(game.scoreString(forPlayer1: true)), \(player2?.name ?? "Player 2") \(game.scoreString(forPlayer1: false))")
     }
 
     // MARK: - Scoring Buttons
@@ -397,6 +430,8 @@ struct LiveMatchView: View {
             }
             .disabled(!viewModel.canUndo)
             .padding(.top, 8)
+            .accessibilityLabel("Undo last point")
+            .accessibilityHint(viewModel.canUndo ? "Double tap to undo the last point awarded" : "No points to undo")
         }
     }
 
@@ -431,6 +466,8 @@ struct LiveMatchView: View {
             )
         }
         .buttonStyle(FSScoreButtonStyle(color: color))
+        .accessibilityLabel("Award point to \(name)")
+        .accessibilityHint("Double tap to give \(name) one point")
     }
 
     // MARK: - Quick Stats Section
@@ -456,6 +493,8 @@ struct LiveMatchView: View {
                     }
                     .foregroundStyle(FSColors.textSecondary)
                 }
+                .accessibilityLabel("View all statistics")
+                .accessibilityHint("Double tap to open detailed match statistics")
             }
 
             HStack(spacing: 12) {
@@ -544,6 +583,8 @@ struct LiveMatchView: View {
                     .fill(color.opacity(0.1))
             )
         }
+        .accessibilityLabel(label)
+        .accessibilityHint("Double tap to select which player scored a \(label.lowercased())")
     }
 
     // MARK: - Match Complete
@@ -589,6 +630,8 @@ struct LiveMatchView: View {
                     .foregroundStyle(FSColors.textSecondary)
                     .padding(.top, 8)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(match.winner?.name ?? "Unknown") wins! Final score: \(match.scoreString)")
 
             Button {
                 showingStatsSheet = true
@@ -601,6 +644,8 @@ struct LiveMatchView: View {
             }
             .buttonStyle(FSPrimaryButtonStyle(color: FSColors.championship))
             .padding(.top, 16)
+            .accessibilityLabel("View match statistics")
+            .accessibilityHint("Double tap to view detailed match statistics")
         }
         .padding(.vertical, 40)
     }
