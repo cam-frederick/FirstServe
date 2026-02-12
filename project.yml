@@ -1,8 +1,8 @@
 name: FirstServe
 options:
-  bundleIdPrefix: com.Cam
+  bundleIdPrefix: com.firstserve
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "17.0"
   xcodeVersion: "16.2"
   defaultConfig: Debug
   groupSortPosition: top
@@ -11,8 +11,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
-    DEVELOPMENT_TEAM: QTX695U3Q9
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    DEVELOPMENT_TEAM: ""
 
 targets:
   FirstServe:
@@ -30,7 +30,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-        PRODUCT_BUNDLE_IDENTIFIER: com.Cam.FirstServe
+        PRODUCT_BUNDLE_IDENTIFIER: com.firstserve.app
         PRODUCT_NAME: FirstServe
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -41,44 +41,43 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_EMIT_LOC_STRINGS: YES
         ENABLE_USER_SCRIPT_SANDBOXING: YES
-        CODE_SIGN_STYLE: Automatic
-        TARGETED_DEVICE_FAMILY: "1,2"
 
   FirstServeTests:
     type: bundle.unit-test
     platform: iOS
     sources:
       - path: FirstServeTests
-        excludes:
-          - "**/.DS_Store"
-      - path: FirstServe/Models
-        excludes:
-          - "**/.DS_Store"
-      - path: FirstServe/ViewModels
-        excludes:
-          - "**/.DS_Store"
     dependencies:
       - target: FirstServe
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.Cam.FirstServeTests
-        PRODUCT_NAME: FirstServeTests
         GENERATE_INFOPLIST_FILE: YES
-        CODE_SIGN_STYLE: Automatic
-        TARGETED_DEVICE_FAMILY: "1,2"
+        PRODUCT_BUNDLE_IDENTIFIER: com.firstserve.tests
+
+  FirstServeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: FirstServeUITests
+    dependencies:
+      - target: FirstServe
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.firstserve.uitests
 
 schemes:
   FirstServe:
     build:
       targets:
         FirstServe: all
-        FirstServeTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - FirstServeTests
+        - FirstServeUITests
     profile:
       config: Release
     analyze:

@@ -64,6 +64,17 @@
                ReferencedContainer = "container:FirstServe.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "C0D1DFEF972CAF356703E3A1"
+               BuildableName = "FirstServeUITests.xctest"
+               BlueprintName = "FirstServeUITests"
+               ReferencedContainer = "container:FirstServe.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>
