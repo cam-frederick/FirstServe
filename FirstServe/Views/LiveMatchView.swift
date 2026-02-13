@@ -788,6 +788,12 @@ struct StatsView: View {
 
                         // Stats comparison
                         statsComparisonSection
+                        
+                        // Serve statistics
+                        serveStatsSection
+                        
+                        // Shot breakdown
+                        shotBreakdownSection
                     }
                     .padding(20)
                 }
@@ -911,11 +917,139 @@ struct StatsView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
     }
+    
+    // MARK: - Serve Statistics
+    
+    private var serveStatsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("SERVE STATISTICS")
+                .font(FSTypography.label(11))
+                .tracking(2)
+                .foregroundStyle(FSColors.textMuted)
+            
+            VStack(spacing: 0) {
+                serveStatRow(
+                    label: "1st Serve %",
+                    p1Value: match.firstServePercentagePlayer1,
+                    p2Value: match.firstServePercentagePlayer2,
+                    isPercentage: true
+                )
+                Divider().background(FSColors.lineWhite.opacity(0.06))
+                serveStatRow(
+                    label: "1st Serve Points Won",
+                    p1Value: match.firstServePointsWonPercentagePlayer1,
+                    p2Value: match.firstServePointsWonPercentagePlayer2,
+                    isPercentage: true
+                )
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(FSColors.backgroundCard)
+            )
+        }
+    }
+    
+    private func serveStatRow(label: String, p1Value: Double, p2Value: Double, isPercentage: Bool) -> some View {
+        HStack {
+            Text(isPercentage ? String(format: "%.0f%%", p1Value) : String(format: "%.1f", p1Value))
+                .font(FSTypography.score(24))
+                .foregroundStyle(p1Value > p2Value ? FSColors.textPrimary : FSColors.textMuted)
+                .frame(width: 70, alignment: .leading)
+
+            Spacer()
+
+            VStack(spacing: 4) {
+                Text(label)
+                    .font(FSTypography.label(10))
+                    .foregroundStyle(FSColors.textSecondary)
+            }
+
+            Spacer()
+
+            Text(isPercentage ? String(format: "%.0f%%", p2Value) : String(format: "%.1f", p2Value))
+                .font(FSTypography.score(24))
+                .foregroundStyle(p2Value > p1Value ? FSColors.textPrimary : FSColors.textMuted)
+                .frame(width: 70, alignment: .trailing)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+    
+    // MARK: - Shot Breakdown
+    
+    private var shotBreakdownSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("SHOT BREAKDOWN")
+                .font(FSTypography.label(11))
+                .tracking(2)
+                .foregroundStyle(FSColors.textMuted)
+            
+            VStack(spacing: 16) {
+                // Winners breakdown
+                shotTypeBreakdown(title: "Winners", statType: .winner)
+                
+                Divider().background(FSColors.lineWhite.opacity(0.06))
+                
+                // Errors breakdown
+                shotTypeBreakdown(title: "Unforced Errors", statType: .unforcedError)
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(FSColors.backgroundCard)
+            )
+        }
+    }
+    
+    private func shotTypeBreakdown(title: String, statType: StatType) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(FSTypography.label(9))
+                .tracking(1.5)
+                .foregroundStyle(statType == .winner ? FSColors.winner : FSColors.fault)
+            
+            VStack(spacing: 8) {
+                shotDetailRow(label: "FH Groundstroke", shotType: .forehand, contactType: .groundstroke, statType: statType)
+                shotDetailRow(label: "BH Groundstroke", shotType: .backhand, contactType: .groundstroke, statType: statType)
+                shotDetailRow(label: "FH Volley", shotType: .forehand, contactType: .volley, statType: statType)
+                shotDetailRow(label: "BH Volley", shotType: .backhand, contactType: .volley, statType: statType)
+                shotDetailRow(label: "Overhead", shotType: .forehand, contactType: .overhead, statType: statType)
+            }
+        }
+    }
+    
+    private func shotDetailRow(label: String, shotType: ShotType, contactType: ContactType, statType: StatType) -> some View {
+        let p1Count = match.shotStatistics.filter {
+            $0.playerNumber == 1 && $0.statType == statType && $0.shotType == shotType && $0.contactType == contactType
+        }.count
+        
+        let p2Count = match.shotStatistics.filter {
+            $0.playerNumber == 2 && $0.statType == statType && $0.shotType == shotType && $0.contactType == contactType
+        }.count
+        
+        return HStack {
+            Text("\(p1Count)")
+                .font(FSTypography.body(16))
+                .foregroundStyle(p1Count > 0 ? FSColors.textPrimary : FSColors.textMuted)
+                .frame(width: 30, alignment: .leading)
+            
+            Text(label)
+                .font(FSTypography.body(13))
+                .foregroundStyle(FSColors.textSecondary)
+            
+            Spacer()
+            
+            Text("\(p2Count)")
+                .font(FSTypography.body(16))
+                .foregroundStyle(p2Count > 0 ? FSColors.textPrimary : FSColors.textMuted)
+                .frame(width: 30, alignment: .trailing)
+        }
+    }
 }
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Match.self, Player.self, TennisSet.self, Game.self, configurations: config)
+    let container = try! ModelContainer(for: Match.self, Player.self, TennisSet.self, Game.self, ShotStatistic.self, configurations: config)
 
     let player1 = Player(name: "Cam")
     let player2 = Player(name: "Opponent")
