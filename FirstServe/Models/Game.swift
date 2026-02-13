@@ -33,16 +33,26 @@ final class Game {
     var pointsPlayer1: Int
     var pointsPlayer2: Int
     
-    /// Is the game complete?
-    var isComplete: Bool {
+    /// Is the game complete? (requires scoring style for no-ad logic)
+    func isComplete(scoringStyle: ScoringStyle) -> Bool {
         // Must have at least 4 points
         guard pointsPlayer1 >= 4 || pointsPlayer2 >= 4 else {
             return false
         }
         
-        // Must win by 2 points after deuce
+        // No-ad: sudden death at deuce (3-3)
+        if scoringStyle == .noAdvantage && pointsPlayer1 >= 3 && pointsPlayer2 >= 3 {
+            return pointsPlayer1 != pointsPlayer2
+        }
+        
+        // Advantage: must win by 2 points after deuce
         let diff = abs(pointsPlayer1 - pointsPlayer2)
         return diff >= 2
+    }
+    
+    /// Backward-compatible isComplete (defaults to advantage scoring)
+    var isComplete: Bool {
+        isComplete(scoringStyle: .advantage)
     }
     
     /// Winner of the game (nil if incomplete)
@@ -63,14 +73,15 @@ final class Game {
 
 extension Game {
     /// Score for a player as a string
-    func scoreString(forPlayer1: Bool) -> String {
+    func scoreString(forPlayer1: Bool, scoringStyle: ScoringStyle = .advantage) -> String {
         let points = forPlayer1 ? pointsPlayer1 : pointsPlayer2
         let opponentPoints = forPlayer1 ? pointsPlayer2 : pointsPlayer1
         
         // Handle deuce and advantage
         if points >= 3 && opponentPoints >= 3 {
             if points == opponentPoints {
-                return "40" // Deuce shows as 40-40
+                // In no-ad, deuce is the deciding point
+                return scoringStyle == .noAdvantage ? "DEUCE" : "40"
             } else if points > opponentPoints {
                 return "AD"
             } else {
@@ -89,7 +100,7 @@ extension Game {
     }
     
     /// Award point to a player
-    func awardPoint(toPlayer1: Bool) {
+    func awardPoint(toPlayer1: Bool, scoringStyle: ScoringStyle = .advantage) {
         if toPlayer1 {
             pointsPlayer1 += 1
         } else {
@@ -97,7 +108,7 @@ extension Game {
         }
         
         // Check if game is complete
-        if isComplete {
+        if isComplete(scoringStyle: scoringStyle) {
             completedAt = Date()
         }
     }
