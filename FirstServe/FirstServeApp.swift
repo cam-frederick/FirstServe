@@ -28,6 +28,6 @@ struct FirstServeApp: App {
                 }
             }
         }
-        .modelContainer(for: [Match.self, Player.self, TennisSet.self, Game.self])
+        .modelContainer(for: [Match.self, Player.self, TennisSet.self, Game.self, ShotStatistic.self])
     }
 }
