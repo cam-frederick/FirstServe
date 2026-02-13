@@ -40,13 +40,30 @@ final class MatchViewModel {
     // MARK: - Match Management
     
     /// Start a new match
-    func startNewMatch(player1Name: String, player2Name: String, format: MatchFormat, surface: CourtSurface, player1ServesFirst: Bool = true) {
+    func startNewMatch(
+        player1Name: String,
+        player2Name: String,
+        format: MatchFormat,
+        surface: CourtSurface,
+        scoringStyle: ScoringStyle = .advantage,
+        regularTiebreakType: TiebreakType = .regular,
+        finalSetTiebreakType: TiebreakType? = nil,
+        player1ServesFirst: Bool = true
+    ) {
         guard let context = modelContext else { return }
         
         let player1 = Player(name: player1Name)
         let player2 = Player(name: player2Name)
         
-        let match = Match(player1: player1, player2: player2, format: format, surface: surface)
+        let match = Match(
+            player1: player1,
+            player2: player2,
+            format: format,
+            surface: surface,
+            scoringStyle: scoringStyle,
+            regularTiebreakType: regularTiebreakType,
+            finalSetTiebreakType: finalSetTiebreakType
+        )
         
         context.insert(match)
         context.insert(player1)
@@ -110,14 +127,14 @@ final class MatchViewModel {
     
     /// Award point during regular game
     private func awardRegularPoint(toPlayer1: Bool, match: Match, set: TennisSet, game: Game) {
-        game.awardPoint(toPlayer1: toPlayer1)
+        game.awardPoint(toPlayer1: toPlayer1, scoringStyle: match.scoringStyle)
         
         // If game is complete, award the game
-        if game.isComplete {
-            set.awardGame(toPlayer1: game.winner == 1)
+        if game.isComplete(scoringStyle: match.scoringStyle) {
+            set.awardGame(toPlayer1: game.winner == 1, format: match.format)
             
             // If set is complete, start new set (if match continues)
-            if set.isComplete {
+            if set.isComplete(format: match.format) {
                 if !match.isComplete {
                     match.startNewSet()
                     
@@ -129,12 +146,13 @@ final class MatchViewModel {
                         newSet.startNewGame(serverIsPlayer1: player1ServesFirst)
                     }
                 }
-            } else if set.isTiebreak {
-                // We just reached 6-6, start tiebreak
-                // In tiebreak, Player 1 serves first point, then alternate every 2
-                set.tiebreakScorePlayer1 = 0
-                set.tiebreakScorePlayer2 = 0
-                // Keep the same game but switch to tiebreak mode
+            } else if set.isTiebreak(format: match.format) {
+                // We just reached 6-6 (or 10-10 for super set), start tiebreak
+                // Determine which tiebreak type to use
+                let isFinalSet = match.sets.count == (match.format == .bestOf5 ? 5 : 3)
+                let tiebreakType = (isFinalSet && match.finalSetTiebreakType != nil) ? match.finalSetTiebreakType! : match.regularTiebreakType
+                
+                set.startTiebreak()
                 // The player who would serve next in rotation serves first in tiebreak
                 let nextServerIsPlayer1 = !game.serverIsPlayer1
                 set.startNewGame(serverIsPlayer1: nextServerIsPlayer1)
@@ -148,30 +166,21 @@ final class MatchViewModel {
     
     /// Award point during tiebreak
     private func awardTiebreakPoint(toPlayer1: Bool, match: Match, set: TennisSet, game: Game) {
-        // Initialize tiebreak scores if needed
-        if set.tiebreakScorePlayer1 == nil {
-            set.tiebreakScorePlayer1 = 0
-            set.tiebreakScorePlayer2 = 0
-        }
+        // Determine which tiebreak type we're using
+        let isFinalSet = match.sets.count == (match.format == .bestOf5 ? 5 : 3)
+        let tiebreakType = (isFinalSet && match.finalSetTiebreakType != nil) ? match.finalSetTiebreakType! : match.regularTiebreakType
         
-        // Award the point
-        if toPlayer1 {
-            set.tiebreakScorePlayer1! += 1
-        } else {
-            set.tiebreakScorePlayer2! += 1
-        }
+        // Use the set's method to award tiebreak point
+        set.awardTiebreakPoint(toPlayer1: toPlayer1, tiebreakType: tiebreakType)
         
-        let p1Score = set.tiebreakScorePlayer1!
-        let p2Score = set.tiebreakScorePlayer2!
+        let p1Score = set.tiebreakScorePlayer1 ?? 0
+        let p2Score = set.tiebreakScorePlayer2 ?? 0
         let totalPoints = p1Score + p2Score
         
-        // Check if tiebreak is won (first to 7 with 2-point lead)
-        let tiebreakWon = (p1Score >= 7 || p2Score >= 7) && abs(p1Score - p2Score) >= 2
+        // Check if tiebreak is won (set already handles this and awards the game)
+        let tiebreakWon = set.isTiebreakComplete(tiebreakType: tiebreakType)
         
         if tiebreakWon {
-            // Award the set to the winner
-            set.awardGame(toPlayer1: p1Score > p2Score)
-            
             // Start new set if match continues
             if !match.isComplete {
                 match.startNewSet()
@@ -271,25 +280,58 @@ final class MatchViewModel {
         try? modelContext?.save()
     }
     
-    func recordWinner(player1: Bool) {
+    func recordWinner(player1: Bool, shotType: ShotType? = nil, contactType: ContactType? = nil) {
         guard let match = currentMatch else { return }
-        if player1 {
-            match.winnersPlayer1 += 1
+        
+        // If shot details provided, use detailed tracking
+        if let shotType = shotType, let contactType = contactType {
+            match.recordShotStatistic(
+                playerNumber: player1 ? 1 : 2,
+                statType: .winner,
+                shotType: shotType,
+                contactType: contactType
+            )
         } else {
-            match.winnersPlayer2 += 1
+            // Fallback to basic tracking
+            if player1 {
+                match.winnersPlayer1 += 1
+            } else {
+                match.winnersPlayer2 += 1
+            }
         }
+        
         match.updatedAt = Date()
         try? modelContext?.save()
     }
     
-    func recordUnforcedError(player1: Bool) {
+    func recordUnforcedError(player1: Bool, shotType: ShotType? = nil, contactType: ContactType? = nil) {
         guard let match = currentMatch else { return }
-        if player1 {
-            match.unforcedErrorsPlayer1 += 1
+        
+        // If shot details provided, use detailed tracking
+        if let shotType = shotType, let contactType = contactType {
+            match.recordShotStatistic(
+                playerNumber: player1 ? 1 : 2,
+                statType: .unforcedError,
+                shotType: shotType,
+                contactType: contactType
+            )
         } else {
-            match.unforcedErrorsPlayer2 += 1
+            // Fallback to basic tracking
+            if player1 {
+                match.unforcedErrorsPlayer1 += 1
+            } else {
+                match.unforcedErrorsPlayer2 += 1
+            }
         }
+        
         match.updatedAt = Date()
+        try? modelContext?.save()
+    }
+    
+    /// Record a serve
+    func recordServe(player1: Bool, firstServe: Bool, made: Bool, pointWon: Bool? = nil) {
+        guard let match = currentMatch else { return }
+        match.recordServe(forPlayer1: player1, firstServe: firstServe, made: made, pointWon: pointWon)
         try? modelContext?.save()
     }
     
@@ -313,7 +355,8 @@ final class MatchViewModel {
     
     /// Is the current set in a tiebreak?
     var isInTiebreak: Bool {
-        currentMatch?.currentSet?.isTiebreak ?? false
+        guard let match = currentMatch, let set = match.currentSet else { return false }
+        return set.isTiebreak(format: match.format)
     }
     
     /// Tiebreak score for player 1 (nil if not in tiebreak)
@@ -324,5 +367,23 @@ final class MatchViewModel {
     /// Tiebreak score for player 2 (nil if not in tiebreak)
     var tiebreakScorePlayer2: Int? {
         currentMatch?.currentSet?.tiebreakScorePlayer2
+    }
+    
+    // MARK: - Serve Statistics Helpers
+    
+    var firstServePercentagePlayer1: Double {
+        currentMatch?.firstServePercentagePlayer1 ?? 0.0
+    }
+    
+    var firstServePercentagePlayer2: Double {
+        currentMatch?.firstServePercentagePlayer2 ?? 0.0
+    }
+    
+    var firstServePointsWonPercentagePlayer1: Double {
+        currentMatch?.firstServePointsWonPercentagePlayer1 ?? 0.0
+    }
+    
+    var firstServePointsWonPercentagePlayer2: Double {
+        currentMatch?.firstServePointsWonPercentagePlayer2 ?? 0.0
     }
 }
