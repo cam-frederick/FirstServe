@@ -16,6 +16,10 @@ struct LiveMatchView: View {
     @State private var viewModel = MatchViewModel()
     @State private var showingEndMatchAlert = false
     @State private var showingStatsSheet = false
+    @State private var showingShotPicker = false
+    @State private var shotPickerStatType: StatType = .winner
+    @State private var shotPickerPlayerName = ""
+    @State private var shotPickerIsPlayer1 = true
     @State private var appearAnimation = false
     @State private var scoreAnimation = false
 
@@ -97,6 +101,15 @@ struct LiveMatchView: View {
         }
         .sheet(isPresented: $showingStatsSheet) {
             StatsView(match: match)
+        }
+        .sheet(isPresented: $showingShotPicker) {
+            ShotPickerView(
+                statType: shotPickerStatType,
+                playerName: shotPickerPlayerName,
+                onSelect: { shotType, contactType in
+                    handleShotSelection(shotType: shotType, contactType: contactType)
+                }
+            )
         }
         .preferredColorScheme(.dark)
         .onAppear {
@@ -531,12 +544,22 @@ struct LiveMatchView: View {
                     icon: "star.fill",
                     color: FSColors.winner,
                     player1Action: {
-                        viewModel.recordWinner(player1: true)
-                        viewModel.awardPoint(toPlayer1: true)
+                        showShotPicker(for: .winner, player1: true)
                     },
                     player2Action: {
-                        viewModel.recordWinner(player1: false)
-                        viewModel.awardPoint(toPlayer1: false)
+                        showShotPicker(for: .winner, player1: false)
+                    }
+                )
+                
+                quickStatButton(
+                    label: "Error",
+                    icon: "exclamationmark.triangle.fill",
+                    color: FSColors.fault,
+                    player1Action: {
+                        showShotPicker(for: .unforcedError, player1: true)
+                    },
+                    player2Action: {
+                        showShotPicker(for: .unforcedError, player1: false)
                     }
                 )
             }
@@ -676,6 +699,27 @@ struct LiveMatchView: View {
     }
     
     // MARK: - Share Functionality
+    
+    // MARK: - Shot Picker Helpers
+    
+    private func showShotPicker(for statType: StatType, player1: Bool) {
+        shotPickerStatType = statType
+        shotPickerIsPlayer1 = player1
+        shotPickerPlayerName = player1 ? (player1?.name ?? "Player 1") : (player2?.name ?? "Player 2")
+        showingShotPicker = true
+    }
+    
+    private func handleShotSelection(shotType: ShotType, contactType: ContactType) {
+        // Record the stat with shot details
+        if shotPickerStatType == .winner {
+            viewModel.recordWinner(player1: shotPickerIsPlayer1, shotType: shotType, contactType: contactType)
+            viewModel.awardPoint(toPlayer1: shotPickerIsPlayer1)
+        } else {
+            viewModel.recordUnforcedError(player1: shotPickerIsPlayer1, shotType: shotType, contactType: contactType)
+            // Unforced error means opponent gets the point
+            viewModel.awardPoint(toPlayer1: !shotPickerIsPlayer1)
+        }
+    }
     
     private func generateShareText() -> String {
         var text = "🎾 FirstServe Match Result\n\n"
