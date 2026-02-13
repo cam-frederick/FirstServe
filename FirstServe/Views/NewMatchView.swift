@@ -16,6 +16,10 @@ struct NewMatchView: View {
     @State private var player2Name = ""
     @State private var selectedSurface: CourtSurface = .hardCourt
     @State private var selectedFormat: MatchFormat = .bestOf3
+    @State private var selectedScoringStyle: ScoringStyle = .advantage
+    @State private var selectedRegularTiebreakType: TiebreakType = .regular
+    @State private var useFinalSetTiebreak = false
+    @State private var selectedFinalSetTiebreakType: TiebreakType = .matchTiebreak
     @State private var location = ""
     @State private var player1ServesFirst = true
     
@@ -63,6 +67,29 @@ struct NewMatchView: View {
                     TextField("Location (optional)", text: $location)
                         .textContentType(.location)
                 }
+                
+                Section("Scoring Rules") {
+                    Picker("Deuce Scoring", selection: $selectedScoringStyle) {
+                        ForEach(ScoringStyle.allCases, id: \.self) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    
+                    Picker("Regular Tiebreak", selection: $selectedRegularTiebreakType) {
+                        Text("7 Points").tag(TiebreakType.regular)
+                        Text("10 Points").tag(TiebreakType.extended)
+                    }
+                    
+                    if selectedFormat == .bestOf3 || selectedFormat == .bestOf5 {
+                        Toggle("Use Match Tiebreak for Final Set", isOn: $useFinalSetTiebreak)
+                        
+                        if useFinalSetTiebreak {
+                            Text("First to 10 points, win by 2")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
             .navigationTitle("New Match")
             .navigationBarTitleDisplayMode(.inline)
@@ -105,6 +132,9 @@ struct NewMatchView: View {
             player2Name: player2Name.trimmingCharacters(in: .whitespaces),
             format: selectedFormat,
             surface: selectedSurface,
+            scoringStyle: selectedScoringStyle,
+            regularTiebreakType: selectedRegularTiebreakType,
+            finalSetTiebreakType: useFinalSetTiebreak ? selectedFinalSetTiebreakType : nil,
             player1ServesFirst: player1ServesFirst
         )
         
@@ -121,5 +151,5 @@ struct NewMatchView: View {
 
 #Preview {
     NewMatchView()
-        .modelContainer(for: [Match.self, Player.self, TennisSet.self, Game.self])
+        .modelContainer(for: [Match.self, Player.self, TennisSet.self, Game.self, ShotStatistic.self])
 }
