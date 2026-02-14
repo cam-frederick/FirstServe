@@ -17,11 +17,14 @@ struct LiveMatchView: View {
     @State private var showingEndMatchAlert = false
     @State private var showingStatsSheet = false
     @State private var showingShotPicker = false
+    @State private var showingMatchSummary = false
     @State private var shotPickerStatType: StatType = .winner
     @State private var shotPickerPlayerName = ""
     @State private var shotPickerIsPlayer1 = true
     @State private var appearAnimation = false
     @State private var scoreAnimation = false
+    @State private var isFirstServe = true
+    @State private var showServeIndicator = false
 
     private var player1: Player? { match.players.first }
     private var player2: Player? { match.players.last }
@@ -53,6 +56,12 @@ struct LiveMatchView: View {
                                 .opacity(appearAnimation ? 1 : 0)
                                 .offset(y: appearAnimation ? 0 : 20)
                                 .animation(.easeOut(duration: 0.5).delay(0.1), value: appearAnimation)
+
+                            // Serve indicator and controls
+                            serveFlowSection
+                                .opacity(appearAnimation ? 1 : 0)
+                                .offset(y: appearAnimation ? 0 : 20)
+                                .animation(.easeOut(duration: 0.5).delay(0.15), value: appearAnimation)
 
                             // Point buttons
                             scoringButtons
@@ -110,6 +119,9 @@ struct LiveMatchView: View {
                     handleShotSelection(shotType: shotType, contactType: contactType)
                 }
             )
+        }
+        .sheet(isPresented: $showingMatchSummary) {
+            MatchSummaryView(match: match)
         }
         .preferredColorScheme(.dark)
         .onAppear {
@@ -284,6 +296,154 @@ struct LiveMatchView: View {
         
         label += ". " + sets
         return label
+    }
+
+    // MARK: - Serve Flow Section
+
+    private var serveFlowSection: some View {
+        VStack(spacing: 16) {
+            // Serve indicator badge
+            HStack(spacing: 12) {
+                Image(systemName: isFirstServe ? "1.circle.fill" : "2.circle.fill")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(isFirstServe ? FSColors.ace : FSColors.fault)
+                
+                Text(isFirstServe ? "FIRST SERVE" : "SECOND SERVE")
+                    .font(FSTypography.label(11))
+                    .tracking(2)
+                    .foregroundStyle(isFirstServe ? FSColors.ace : FSColors.fault)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill((isFirstServe ? FSColors.ace : FSColors.fault).opacity(0.15))
+                    .overlay(
+                        Capsule()
+                            .stroke(isFirstServe ? FSColors.ace : FSColors.fault, lineWidth: 1.5)
+                    )
+            )
+            .scaleEffect(showServeIndicator ? 1.05 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showServeIndicator)
+            
+            // Quick serve recording buttons
+            VStack(spacing: 12) {
+                Text("SERVE OUTCOME")
+                    .font(FSTypography.label(9))
+                    .tracking(1.5)
+                    .foregroundStyle(FSColors.textMuted)
+                
+                HStack(spacing: 12) {
+                    // Ace button
+                    serveOutcomeButton(
+                        label: "Ace",
+                        icon: "bolt.fill",
+                        color: FSColors.ace
+                    ) {
+                        recordServeOutcome(made: true, ace: true)
+                    }
+                    
+                    // In (point continues)
+                    serveOutcomeButton(
+                        label: "In",
+                        icon: "checkmark.circle.fill",
+                        color: FSColors.courtGreen
+                    ) {
+                        recordServeOutcome(made: true, ace: false)
+                    }
+                    
+                    // Fault
+                    serveOutcomeButton(
+                        label: "Fault",
+                        icon: "xmark.circle.fill",
+                        color: FSColors.fault
+                    ) {
+                        recordServeOutcome(made: false, ace: false)
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(FSColors.backgroundCard)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(FSColors.lineWhite.opacity(0.06), lineWidth: 1)
+                )
+        )
+    }
+    
+    private func serveOutcomeButton(label: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: {
+            // Haptic feedback
+            let impact = UIImpactFeedbackGenerator(style: .medium)
+            impact.impactOccurred()
+            action()
+        }) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 18))
+                    .foregroundStyle(color)
+                
+                Text(label)
+                    .font(FSTypography.label(10))
+                    .foregroundStyle(FSColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(color.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+    
+    private func recordServeOutcome(made: Bool, ace: Bool) {
+        guard let currentSet = match.currentSet,
+              let currentGame = currentSet.currentGame else { return }
+        
+        let isServer = currentGame.serverIsPlayer1
+        
+        // Record the serve in match stats
+        match.recordServe(forPlayer1: isServer, firstServe: isFirstServe, made: made, pointWon: ace)
+        
+        if ace {
+            // Ace: server wins the point
+            viewModel.recordAce(player1: isServer)
+            viewModel.awardPoint(toPlayer1: isServer)
+            // Reset to first serve for next point
+            isFirstServe = true
+            showServeIndicator = false
+        } else if made {
+            // Serve in: point continues, user can manually award point
+            if isFirstServe {
+                isFirstServe = true // Stay on first serve for next point
+            }
+            showServeIndicator = false
+        } else {
+            // Fault
+            if isFirstServe {
+                // First serve fault -> switch to second serve
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isFirstServe = false
+                    showServeIndicator = true
+                }
+            } else {
+                // Double fault -> opponent wins point
+                viewModel.recordDoubleFault(player1: isServer)
+                viewModel.awardPoint(toPlayer1: !isServer)
+                // Reset to first serve for next point
+                isFirstServe = true
+                showServeIndicator = false
+            }
+        }
     }
 
     // MARK: - Current Game Score
@@ -656,44 +816,72 @@ struct LiveMatchView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(match.winner?.name ?? "Unknown") wins! Final score: \(match.scoreString)")
 
-            HStack(spacing: 12) {
-                // Share button
-                ShareLink(item: generateShareText()) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 14, weight: .semibold))
-                        Text("Share Result")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(FSColors.courtGreen)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                    .fontWeight(.semibold)
-                }
-                .buttonStyle(.plain)
-                
-                // Stats button
+            VStack(spacing: 12) {
+                // Match Summary button (primary CTA)
                 Button {
-                    showingStatsSheet = true
+                    showingMatchSummary = true
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "chart.bar.fill")
+                        Image(systemName: "trophy.fill")
                             .font(.system(size: 14, weight: .semibold))
-                        Text("View Stats")
+                        Text("Match Summary")
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(FSColors.championship)
+                    .background(
+                        LinearGradient(
+                            colors: [FSColors.championship, FSColors.championship.opacity(0.8)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .foregroundColor(.white)
                     .cornerRadius(12)
                     .fontWeight(.semibold)
                 }
                 .buttonStyle(.plain)
+                .scaleEffect(1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showingMatchSummary)
+                
+                HStack(spacing: 12) {
+                    // Share button
+                    ShareLink(item: generateShareText()) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Share")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(FSColors.courtGreen)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                        .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    // Detailed Stats button
+                    Button {
+                        showingStatsSheet = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "chart.bar.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Stats")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(FSColors.backgroundElevated)
+                        .foregroundColor(FSColors.textPrimary)
+                        .cornerRadius(12)
+                        .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(.top, 16)
-            .accessibilityLabel("View match statistics")
-            .accessibilityHint("Double tap to view detailed match statistics")
+            .accessibilityLabel("View match summary and statistics")
+            .accessibilityHint("Double tap to view comprehensive match summary")
         }
         .padding(.vertical, 40)
     }
