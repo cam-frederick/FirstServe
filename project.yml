@@ -2,7 +2,7 @@ name: FirstServe
 options:
   bundleIdPrefix: com.firstserve
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "18.0"
   xcodeVersion: "16.2"
   defaultConfig: Debug
   groupSortPosition: top
@@ -11,7 +11,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     DEVELOPMENT_TEAM: ""
 
 targets:

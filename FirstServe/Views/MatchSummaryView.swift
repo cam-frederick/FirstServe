@@ -8,6 +8,7 @@
 
 import SwiftUI
 import Charts
+import SwiftData
 
 struct MatchSummaryView: View {
     @Environment(\.dismiss) private var dismiss
@@ -663,6 +664,6 @@ struct MatchSummaryView: View {
     container.mainContext.insert(player1)
     container.mainContext.insert(player2)
     
-    return MatchSummaryView(match: match)
+    MatchSummaryView(match: match)
         .modelContainer(container)
 }

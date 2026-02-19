@@ -1249,7 +1249,7 @@ struct StatsView: View {
     container.mainContext.insert(player1)
     container.mainContext.insert(player2)
 
-    return NavigationStack {
+    NavigationStack {
         LiveMatchView(match: match)
     }
     .modelContainer(container)
