@@ -256,7 +256,7 @@ struct MatchSummaryView: View {
             Spacer()
             
             // Tiebreak indicator if applicable
-            if set.gamesPlayer1 == set.tiebreakAt && set.gamesPlayer2 == set.tiebreakAt {
+            if set.tiebreakScorePlayer1 != nil {
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
                         .font(.system(size: 8))
@@ -650,20 +650,20 @@ struct MatchSummaryView: View {
     let match = Match(player1: player1, player2: player2, format: .bestOf3, surface: .hardCourt)
     
     // Simulate a completed match
-    match.startNewSet()
-    match.isComplete = true
-    match.completedAt = Date()
-    match.acesPlayer1 = 5
-    match.acesPlayer2 = 3
-    match.winnersPlayer1 = 12
-    match.winnersPlayer2 = 8
-    match.unforcedErrorsPlayer1 = 7
-    match.unforcedErrorsPlayer2 = 11
-    
-    container.mainContext.insert(match)
-    container.mainContext.insert(player1)
-    container.mainContext.insert(player2)
-    
+    let _ = {
+        match.startNewSet()
+        match.completedAt = Date()
+        match.acesPlayer1 = 5
+        match.acesPlayer2 = 3
+        match.winnersPlayer1 = 12
+        match.winnersPlayer2 = 8
+        match.unforcedErrorsPlayer1 = 7
+        match.unforcedErrorsPlayer2 = 11
+        container.mainContext.insert(match)
+        container.mainContext.insert(player1)
+        container.mainContext.insert(player2)
+    }()
+
     MatchSummaryView(match: match)
         .modelContainer(container)
 }

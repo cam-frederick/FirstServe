@@ -115,7 +115,7 @@ final class MatchViewModel {
         undoStack.append(snapshot)
         
         // Check if we're in a tiebreak
-        if set.isTiebreak {
+        if set.isTiebreak() {
             awardTiebreakPoint(toPlayer1: toPlayer1, match: match, set: set, game: game)
         } else {
             awardRegularPoint(toPlayer1: toPlayer1, match: match, set: set, game: game)

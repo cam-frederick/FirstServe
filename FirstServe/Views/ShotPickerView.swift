@@ -186,6 +186,7 @@ struct ShotPickerView: View {
         case (.forehand, .volley): return "⚡️"
         case (.backhand, .volley): return "⚡️"
         case (.forehand, .overhead): return "💥"
+        case (.forehand, .serve): return "🚀"
         case (.backhand, _): return "🎾"
         }
     }

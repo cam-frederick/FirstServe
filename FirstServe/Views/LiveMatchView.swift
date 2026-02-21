@@ -450,7 +450,7 @@ struct LiveMatchView: View {
 
     private var currentGameScore: some View {
         VStack(spacing: 16) {
-            if let currentSet = match.currentSet, currentSet.isTiebreak {
+            if let currentSet = match.currentSet, currentSet.isTiebreak() {
                 // Tiebreak
                 tiebreakScoreDisplay(set: currentSet)
             } else if let game = match.currentSet?.currentGame {
@@ -704,10 +704,10 @@ struct LiveMatchView: View {
                     icon: "star.fill",
                     color: FSColors.winner,
                     player1Action: {
-                        showShotPicker(for: .winner, player1: true)
+                        showShotPicker(for: .winner, isPlayer1: true)
                     },
                     player2Action: {
-                        showShotPicker(for: .winner, player1: false)
+                        showShotPicker(for: .winner, isPlayer1: false)
                     }
                 )
                 
@@ -716,10 +716,10 @@ struct LiveMatchView: View {
                     icon: "exclamationmark.triangle.fill",
                     color: FSColors.fault,
                     player1Action: {
-                        showShotPicker(for: .unforcedError, player1: true)
+                        showShotPicker(for: .unforcedError, isPlayer1: true)
                     },
                     player2Action: {
-                        showShotPicker(for: .unforcedError, player1: false)
+                        showShotPicker(for: .unforcedError, isPlayer1: false)
                     }
                 )
             }
@@ -890,10 +890,10 @@ struct LiveMatchView: View {
     
     // MARK: - Shot Picker Helpers
     
-    private func showShotPicker(for statType: StatType, player1: Bool) {
+    private func showShotPicker(for statType: StatType, isPlayer1: Bool) {
         shotPickerStatType = statType
-        shotPickerIsPlayer1 = player1
-        shotPickerPlayerName = player1 ? (player1?.name ?? "Player 1") : (player2?.name ?? "Player 2")
+        shotPickerIsPlayer1 = isPlayer1
+        shotPickerPlayerName = isPlayer1 ? (player1?.name ?? "Player 1") : (player2?.name ?? "Player 2")
         showingShotPicker = true
     }
     
@@ -1242,12 +1242,15 @@ struct StatsView: View {
     let player1 = Player(name: "Cam")
     let player2 = Player(name: "Opponent")
     let match = Match(player1: player1, player2: player2, format: .bestOf3, surface: .hardCourt)
-    match.startNewSet()
-    match.currentSet?.startNewGame(serverIsPlayer1: true)
 
-    container.mainContext.insert(match)
-    container.mainContext.insert(player1)
-    container.mainContext.insert(player2)
+    let _ = {
+        match.startNewSet()
+        match.currentSet?.startNewGame(serverIsPlayer1: true)
+    }()
+
+    let _ = container.mainContext.insert(match)
+    let _ = container.mainContext.insert(player1)
+    let _ = container.mainContext.insert(player2)
 
     NavigationStack {
         LiveMatchView(match: match)
