@@ -259,17 +259,47 @@ struct LiveMatchView: View {
                     let won = games > otherGames
                     let isCurrentSet = index == match.sets.count - 1 && !match.isComplete
 
-                    Text("\(games)")
-                        .font(FSTypography.score(28))
-                        .foregroundStyle(won ? FSColors.textPrimary : FSColors.textMuted)
-                        .frame(minWidth: 32)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(isCurrentSet ? FSColors.backgroundElevated : Color.clear)
-                        )
-                        .accessibilityLabel("Set \(index + 1): \(games) games")
+                    // Determine tiebreak loser score to show as superscript.
+                    // Tennis convention: show the loser's tiebreak score next to the "6"
+                    // e.g. "6⁷" (loser showed 6 tiebreak points when they lost 6-7).
+                    let tbP1 = set.tiebreakScorePlayer1
+                    let tbP2 = set.tiebreakScorePlayer2
+                    let tiebreakWasPlayed = tbP1 != nil && tbP2 != nil && !isCurrentSet
+                    let myTbScore = isPlayer1 ? tbP1 : tbP2
+                    let theirTbScore = isPlayer1 ? tbP2 : tbP1
+                    // Show the loser's tiebreak score — if this player lost the tiebreak,
+                    // it's their score; if they won, it's the opponent's score.
+                    let loserTbScore: Int? = tiebreakWasPlayed
+                        ? (won ? theirTbScore : myTbScore)
+                        : nil
+
+                    ZStack(alignment: .topTrailing) {
+                        Text("\(games)")
+                            .font(FSTypography.score(28))
+                            .foregroundStyle(won ? FSColors.textPrimary : FSColors.textMuted)
+                            .frame(minWidth: 32)
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(isCurrentSet ? FSColors.backgroundElevated : Color.clear)
+                            )
+
+                        // Superscript tiebreak score (loser's score, tennis convention)
+                        if let loser = loserTbScore {
+                            Text("(\(loser))")
+                                .font(FSTypography.label(9))
+                                .foregroundStyle(FSColors.textMuted)
+                                .offset(x: 2, y: -2)
+                        }
+                    }
+                    .accessibilityLabel({
+                        var label = "Set \(index + 1): \(games) games"
+                        if let loser = loserTbScore {
+                            label += ", tiebreak \(won ? (theirTbScore ?? 0) : (myTbScore ?? 0))-\(loser)"
+                        }
+                        return label
+                    }())
                 }
             }
         }
@@ -470,12 +500,40 @@ struct LiveMatchView: View {
         )
     }
 
+    /// Returns the appropriate TiebreakType for the given set, accounting for
+    /// final-set tiebreak rules when a `finalSetTiebreakType` is configured.
+    private func tiebreakType(for set: TennisSet) -> TiebreakType {
+        let totalSetsNeeded = match.format.setsToWin * 2 - 1
+        let isFinalSet = match.sets.count == totalSetsNeeded
+        if isFinalSet, let finalType = match.finalSetTiebreakType {
+            return finalType
+        }
+        return match.regularTiebreakType
+    }
+
+    /// Human-readable badge label for the tiebreak type, e.g. "TIEBREAK · 7 PTS"
+    /// or "MATCH TIEBREAK · 10 PTS".
+    private func tiebreakBadgeLabel(for set: TennisSet) -> String {
+        let type = tiebreakType(for: set)
+        switch type {
+        case .matchTiebreak:
+            return "MATCH TIEBREAK · \(type.pointsToWin) PTS"
+        case .extended:
+            return "TIEBREAK · \(type.pointsToWin) PTS"
+        case .regular:
+            return "TIEBREAK · \(type.pointsToWin) PTS"
+        }
+    }
+
     private func tiebreakScoreDisplay(set: TennisSet) -> some View {
-        VStack(spacing: 16) {
-            // Tiebreak badge
-            Text("TIEBREAK")
+        let tbType = tiebreakType(for: set)
+        let badgeLabel = tiebreakBadgeLabel(for: set)
+
+        return VStack(spacing: 16) {
+            // Tiebreak badge — shows type and target score
+            Text(badgeLabel)
                 .font(FSTypography.label(11))
-                .tracking(3)
+                .tracking(2)
                 .foregroundStyle(FSColors.ace)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
@@ -511,24 +569,45 @@ struct LiveMatchView: View {
                 }
             }
 
-            Text("First to 7, win by 2")
+            // Dynamic tiebreak rule description using actual match configuration
+            Text(tbType.description)
                 .font(FSTypography.label(10))
                 .foregroundStyle(FSColors.textMuted)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Tiebreak: \(player1?.name ?? "Player 1") \(set.tiebreakScorePlayer1 ?? 0), \(player2?.name ?? "Player 2") \(set.tiebreakScorePlayer2 ?? 0). First to 7, win by 2")
+        .accessibilityLabel("Tiebreak: \(player1?.name ?? "Player 1") \(set.tiebreakScorePlayer1 ?? 0), \(player2?.name ?? "Player 2") \(set.tiebreakScorePlayer2 ?? 0). \(tbType.description)")
     }
 
     private func regularGameScoreDisplay(game: Game) -> some View {
-        VStack(spacing: 16) {
-            Text("CURRENT GAME")
-                .font(FSTypography.label(10))
-                .tracking(2)
-                .foregroundStyle(FSColors.textMuted)
+        let style = match.scoringStyle
+        let isNoAdDeuce = style == .noAdvantage
+            && game.pointsPlayer1 >= 3
+            && game.pointsPlayer2 >= 3
+            && game.pointsPlayer1 == game.pointsPlayer2
+
+        return VStack(spacing: 16) {
+            // Header — flag sudden death in no-ad scoring at deuce
+            if isNoAdDeuce {
+                VStack(spacing: 4) {
+                    Text("CURRENT GAME")
+                        .font(FSTypography.label(10))
+                        .tracking(2)
+                        .foregroundStyle(FSColors.textMuted)
+                    Text("SUDDEN DEATH")
+                        .font(FSTypography.label(9))
+                        .tracking(2)
+                        .foregroundStyle(FSColors.fault)
+                }
+            } else {
+                Text("CURRENT GAME")
+                    .font(FSTypography.label(10))
+                    .tracking(2)
+                    .foregroundStyle(FSColors.textMuted)
+            }
 
             HStack(spacing: 32) {
                 VStack(spacing: 8) {
-                    Text(game.scoreString(forPlayer1: true))
+                    Text(game.scoreString(forPlayer1: true, scoringStyle: style))
                         .font(FSTypography.display(64))
                         .foregroundStyle(FSColors.textPrimary)
                         .contentTransition(.numericText())
@@ -543,7 +622,7 @@ struct LiveMatchView: View {
                     .foregroundStyle(FSColors.textMuted)
 
                 VStack(spacing: 8) {
-                    Text(game.scoreString(forPlayer1: false))
+                    Text(game.scoreString(forPlayer1: false, scoringStyle: style))
                         .font(FSTypography.display(64))
                         .foregroundStyle(FSColors.textPrimary)
                         .contentTransition(.numericText())
@@ -555,7 +634,13 @@ struct LiveMatchView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Current game: \(player1?.name ?? "Player 1") \(game.scoreString(forPlayer1: true)), \(player2?.name ?? "Player 2") \(game.scoreString(forPlayer1: false))")
+        .accessibilityLabel({
+            let p1Score = game.scoreString(forPlayer1: true, scoringStyle: style)
+            let p2Score = game.scoreString(forPlayer1: false, scoringStyle: style)
+            var label = "Current game: \(player1?.name ?? "Player 1") \(p1Score), \(player2?.name ?? "Player 2") \(p2Score)"
+            if isNoAdDeuce { label += ". Sudden death — next point wins." }
+            return label
+        }())
     }
 
     // MARK: - Scoring Buttons
@@ -592,6 +677,11 @@ struct LiveMatchView: View {
             // Undo button
             Button {
                 viewModel.undoLastPoint()
+                // Always reset to first serve on undo so the user re-enters the
+                // serve state cleanly. This covers the edge case where the undone
+                // point ended on a double fault and the view was showing "2nd serve".
+                isFirstServe = true
+                showServeIndicator = false
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.uturn.left")
