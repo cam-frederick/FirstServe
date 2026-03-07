@@ -371,4 +371,69 @@ final class TennisSetTests: XCTestCase {
         XCTAssertEqual(set5.setNumber, 5)
         XCTAssertEqual(set10.setNumber, 10)
     }
+    
+    // MARK: - Super Set isTiebreak
+    
+    func test_superSet_isTiebreakAt10_10() {
+        let set = TennisSet(setNumber: 1)
+        set.gamesPlayer1 = 10
+        set.gamesPlayer2 = 10
+        
+        XCTAssertTrue(set.isTiebreak(format: .superSet))
+        // Standard check should NOT trigger at 10-10 (it checks for 6-6)
+        XCTAssertFalse(set.isTiebreak(format: .bestOf3))
+    }
+    
+    func test_superSet_notTiebreakAt6_6() {
+        let set = TennisSet(setNumber: 1)
+        set.gamesPlayer1 = 6
+        set.gamesPlayer2 = 6
+        
+        // Super set: 6-6 is not a tiebreak
+        XCTAssertFalse(set.isTiebreak(format: .superSet))
+        // Standard set: 6-6 IS a tiebreak
+        XCTAssertTrue(set.isTiebreak(format: .bestOf3))
+    }
+    
+    func test_superSet_isCompleteAt10_8() {
+        let set = TennisSet(setNumber: 1)
+        set.gamesPlayer1 = 10
+        set.gamesPlayer2 = 8
+        
+        XCTAssertTrue(set.isComplete(format: .superSet))
+    }
+    
+    func test_superSet_notCompleteAt10_9() {
+        let set = TennisSet(setNumber: 1)
+        set.gamesPlayer1 = 10
+        set.gamesPlayer2 = 9
+        
+        // 10-9 is NOT complete — must win by 2
+        XCTAssertFalse(set.isComplete(format: .superSet))
+    }
+    
+    func test_superSet_isCompleteAt11_10_afterTiebreak() {
+        let set = TennisSet(setNumber: 1)
+        set.gamesPlayer1 = 11
+        set.gamesPlayer2 = 10
+        
+        XCTAssertTrue(set.isComplete(format: .superSet))
+    }
+    
+    func test_backwardCompatibleIsTiebreakProperty() {
+        let set = TennisSet(setNumber: 1)
+        set.gamesPlayer1 = 6
+        set.gamesPlayer2 = 6
+        
+        // Backward-compatible property should behave like passing nil (standard 6-6 check)
+        XCTAssertTrue(set.isTiebreak)
+    }
+    
+    func test_backwardCompatibleIsTiebreakFalseWhenNot6_6() {
+        let set = TennisSet(setNumber: 1)
+        set.gamesPlayer1 = 5
+        set.gamesPlayer2 = 4
+        
+        XCTAssertFalse(set.isTiebreak)
+    }
 }

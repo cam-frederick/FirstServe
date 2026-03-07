@@ -66,6 +66,11 @@ final class TennisSet {
         isComplete(format: nil)
     }
     
+    /// Backward-compatible isTiebreak (standard 6-6 check, no super set awareness)
+    var isTiebreak: Bool {
+        isTiebreak(format: nil)
+    }
+    
     /// Is a tiebreak in progress?
     func isTiebreak(format: MatchFormat? = nil) -> Bool {
         if let format = format, format == .superSet {

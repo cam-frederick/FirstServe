@@ -41,6 +41,16 @@ final class MatchTests: XCTestCase {
         XCTAssertEqual(match.winnersPlayer2, 0)
         XCTAssertEqual(match.unforcedErrorsPlayer1, 0)
         XCTAssertEqual(match.unforcedErrorsPlayer2, 0)
+        
+        // Serve fields
+        XCTAssertEqual(match.firstServeAttemptsPlayer1, 0)
+        XCTAssertEqual(match.firstServesMadePlayer1, 0)
+        XCTAssertEqual(match.firstServeAttemptsPlayer2, 0)
+        XCTAssertEqual(match.firstServesMadePlayer2, 0)
+        XCTAssertEqual(match.secondServeAttemptsPlayer1, 0)
+        XCTAssertEqual(match.secondServesMadePlayer1, 0)
+        XCTAssertEqual(match.secondServeAttemptsPlayer2, 0)
+        XCTAssertEqual(match.secondServesMadePlayer2, 0)
     }
     
     func test_matchFormat_bestOf3() {

@@ -63,6 +63,12 @@ struct LiveMatchView: View {
                                 .offset(y: appearAnimation ? 0 : 20)
                                 .animation(.easeOut(duration: 0.5).delay(0.15), value: appearAnimation)
 
+                            // Live serve percentage bar
+                            liveServeStatsBar
+                                .opacity(appearAnimation ? 1 : 0)
+                                .offset(y: appearAnimation ? 0 : 20)
+                                .animation(.easeOut(duration: 0.5).delay(0.175), value: appearAnimation)
+
                             // Point buttons
                             scoringButtons
                                 .opacity(appearAnimation ? 1 : 0)
@@ -274,16 +280,26 @@ struct LiveMatchView: View {
                         : nil
 
                     ZStack(alignment: .topTrailing) {
-                        Text("\(games)")
-                            .font(FSTypography.score(28))
-                            .foregroundStyle(won ? FSColors.textPrimary : FSColors.textMuted)
-                            .frame(minWidth: 32)
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(isCurrentSet ? FSColors.backgroundElevated : Color.clear)
-                            )
+                        VStack(spacing: 0) {
+                            Text("\(games)")
+                                .font(FSTypography.score(28))
+                                .foregroundStyle(won ? FSColors.textPrimary : FSColors.textMuted)
+                            
+                            // Show "PTS" label for super set to disambiguate from games
+                            if match.format == .superSet && isCurrentSet {
+                                Text("PTS")
+                                    .font(FSTypography.label(7))
+                                    .tracking(0.5)
+                                    .foregroundStyle(FSColors.textMuted.opacity(0.7))
+                            }
+                        }
+                        .frame(minWidth: 32)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(isCurrentSet ? FSColors.backgroundElevated : Color.clear)
+                        )
 
                         // Superscript tiebreak score (loser's score, tennis convention)
                         if let loser = loserTbScore {
@@ -435,6 +451,89 @@ struct LiveMatchView: View {
         .accessibilityLabel(label)
     }
     
+    // MARK: - Live Serve Stats Bar
+    
+    /// Compact serve % bar displayed below the serve flow section during a live match.
+    /// Gives the server real-time first serve % feedback without opening the stats sheet.
+    private var liveServeStatsBar: some View {
+        let p1Pct = match.firstServePercentagePlayer1
+        let p2Pct = match.firstServePercentagePlayer2
+        let isP1Serving = match.currentSet?.currentGame?.serverIsPlayer1 ?? true
+        let serverPct = isP1Serving ? p1Pct : p2Pct
+        let serverName = isP1Serving ? (player1?.name ?? "P1") : (player2?.name ?? "P2")
+        let hasStat = (isP1Serving ? match.firstServeAttemptsPlayer1 : match.firstServeAttemptsPlayer2) > 0
+        
+        return VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(FSColors.textMuted)
+                Text("LIVE SERVE %")
+                    .font(FSTypography.label(9))
+                    .tracking(1.5)
+                    .foregroundStyle(FSColors.textMuted)
+                Spacer()
+            }
+            
+            if hasStat {
+                VStack(spacing: 6) {
+                    HStack {
+                        Text("\(serverName)")
+                            .font(FSTypography.label(10))
+                            .foregroundStyle(FSColors.textSecondary)
+                        Spacer()
+                        Text(String(format: "%.0f%%", serverPct))
+                            .font(FSTypography.label(11))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(serverPct >= 60 ? FSColors.ace : serverPct >= 45 ? FSColors.ballYellow : FSColors.fault)
+                    }
+                    
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(FSColors.backgroundElevated)
+                                .frame(height: 6)
+                            
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(
+                                    LinearGradient(
+                                        colors: serverPct >= 60 ? [FSColors.ace, FSColors.ace.opacity(0.7)] :
+                                                serverPct >= 45 ? [FSColors.ballYellow, FSColors.ballYellow.opacity(0.7)] :
+                                                                   [FSColors.fault, FSColors.fault.opacity(0.7)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: geo.size.width * CGFloat(serverPct / 100.0), height: 6)
+                                .animation(.easeInOut(duration: 0.4), value: serverPct)
+                        }
+                    }
+                    .frame(height: 6)
+                }
+            } else {
+                HStack {
+                    Text("No serves recorded yet")
+                        .font(FSTypography.label(10))
+                        .foregroundStyle(FSColors.textMuted)
+                    Spacer()
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(FSColors.backgroundCard)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(FSColors.lineWhite.opacity(0.06), lineWidth: 1)
+                )
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(hasStat
+            ? "\(serverName) first serve: \(String(format: "%.0f", serverPct))%"
+            : "No serves recorded yet")
+    }
+    
     private func recordServeOutcome(made: Bool, ace: Bool) {
         guard let currentSet = match.currentSet,
               let currentGame = currentSet.currentGame else { return }
@@ -480,7 +579,7 @@ struct LiveMatchView: View {
 
     private var currentGameScore: some View {
         VStack(spacing: 16) {
-            if let currentSet = match.currentSet, currentSet.isTiebreak() {
+            if let currentSet = match.currentSet, currentSet.isTiebreak(format: match.format) {
                 // Tiebreak
                 tiebreakScoreDisplay(set: currentSet)
             } else if let game = match.currentSet?.currentGame {
@@ -661,6 +760,9 @@ struct LiveMatchView: View {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                         viewModel.awardPoint(toPlayer1: true)
                     }
+                    // Reset serve state for next point
+                    isFirstServe = true
+                    showServeIndicator = false
                 }
 
                 // Player 2 button
@@ -671,6 +773,9 @@ struct LiveMatchView: View {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                         viewModel.awardPoint(toPlayer1: false)
                     }
+                    // Reset serve state for next point
+                    isFirstServe = true
+                    showServeIndicator = false
                 }
             }
 
@@ -1049,9 +1154,17 @@ struct LiveMatchView: View {
 struct StatsView: View {
     @Environment(\.dismiss) private var dismiss
     let match: Match
+    
+    /// 0 = match total; 1...N = set number
+    @State private var selectedSetFilter: Int = 0
 
     private var player1: Player? { match.players.first }
     private var player2: Player? { match.players.last }
+    
+    /// Completed set count — used to build the segmented control
+    private var completedSetCount: Int {
+        match.sets.filter { $0.isComplete }.count
+    }
 
     var body: some View {
         NavigationStack {
@@ -1070,7 +1183,12 @@ struct StatsView: View {
                         // Serve statistics
                         serveStatsSection
                         
-                        // Shot breakdown
+                        // Per-set filter (shown when multiple sets exist)
+                        if completedSetCount > 1 {
+                            setFilterPicker
+                        }
+                        
+                        // Shot breakdown (filtered by selected set)
                         shotBreakdownSection
                     }
                     .padding(20)
@@ -1219,6 +1337,20 @@ struct StatsView: View {
                     p2Value: match.firstServePointsWonPercentagePlayer2,
                     isPercentage: true
                 )
+                Divider().background(FSColors.lineWhite.opacity(0.06))
+                serveStatRow(
+                    label: "2nd Serve %",
+                    p1Value: match.secondServePercentagePlayer1,
+                    p2Value: match.secondServePercentagePlayer2,
+                    isPercentage: true
+                )
+                Divider().background(FSColors.lineWhite.opacity(0.06))
+                serveStatRow(
+                    label: "2nd Serve Points Won",
+                    p1Value: match.secondServePointsWonPercentagePlayer1,
+                    p2Value: match.secondServePointsWonPercentagePlayer2,
+                    isPercentage: true
+                )
             }
             .background(
                 RoundedRectangle(cornerRadius: 16)
@@ -1251,6 +1383,52 @@ struct StatsView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+    }
+    
+    // MARK: - Set Filter Picker
+    
+    private var setFilterPicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("FILTER BY SET")
+                .font(FSTypography.label(11))
+                .tracking(2)
+                .foregroundStyle(FSColors.textMuted)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    setFilterChip(label: "Match", tag: 0)
+                    ForEach(1...completedSetCount, id: \.self) { setNum in
+                        setFilterChip(label: "Set \(setNum)", tag: setNum)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func setFilterChip(label: String, tag: Int) -> some View {
+        let isSelected = selectedSetFilter == tag
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedSetFilter = tag
+            }
+        } label: {
+            Text(label)
+                .font(FSTypography.label(11))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? FSColors.ace.opacity(0.2) : FSColors.backgroundElevated)
+                        .overlay(
+                            Capsule()
+                                .stroke(isSelected ? FSColors.ace : FSColors.lineWhite.opacity(0.1), lineWidth: 1)
+                        )
+                )
+                .foregroundStyle(isSelected ? FSColors.ace : FSColors.textSecondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
     
     // MARK: - Shot Breakdown
@@ -1291,18 +1469,27 @@ struct StatsView: View {
                 shotDetailRow(label: "BH Groundstroke", shotType: .backhand, contactType: .groundstroke, statType: statType)
                 shotDetailRow(label: "FH Volley", shotType: .forehand, contactType: .volley, statType: statType)
                 shotDetailRow(label: "BH Volley", shotType: .backhand, contactType: .volley, statType: statType)
-                shotDetailRow(label: "Overhead", shotType: .forehand, contactType: .overhead, statType: statType)
+                // Overhead: no forehand/backhand distinction — pass nil to include all overhead smashes
+                shotDetailRow(label: "Overhead", shotType: nil, contactType: .overhead, statType: statType)
             }
         }
     }
     
-    private func shotDetailRow(label: String, shotType: ShotType, contactType: ContactType, statType: StatType) -> some View {
+    private func shotDetailRow(label: String, shotType: ShotType?, contactType: ContactType, statType: StatType) -> some View {
         let p1Count = match.shotStatistics.filter {
-            $0.playerNumber == 1 && $0.statType == statType && $0.shotType == shotType && $0.contactType == contactType
+            $0.playerNumber == 1
+            && $0.statType == statType
+            && (shotType == nil || $0.shotType == shotType)
+            && $0.contactType == contactType
+            && (selectedSetFilter == 0 || $0.setNumber == selectedSetFilter)
         }.count
         
         let p2Count = match.shotStatistics.filter {
-            $0.playerNumber == 2 && $0.statType == statType && $0.shotType == shotType && $0.contactType == contactType
+            $0.playerNumber == 2
+            && $0.statType == statType
+            && (shotType == nil || $0.shotType == shotType)
+            && $0.contactType == contactType
+            && (selectedSetFilter == 0 || $0.setNumber == selectedSetFilter)
         }.count
         
         return HStack {

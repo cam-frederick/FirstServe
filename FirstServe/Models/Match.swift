@@ -82,6 +82,12 @@ final class Match {
     var pointsWonOnSecondServePlayer1: Int
     var pointsWonOnSecondServePlayer2: Int
     
+    /// Second serve tracking
+    var secondServeAttemptsPlayer1: Int
+    var secondServesMadePlayer1: Int
+    var secondServeAttemptsPlayer2: Int
+    var secondServesMadePlayer2: Int
+    
     /// Detailed shot statistics
     @Relationship(deleteRule: .cascade)
     var shotStatistics: [ShotStatistic]
@@ -162,6 +168,17 @@ final class Match {
         self.pointsWonOnFirstServePlayer2 = 0
         self.pointsWonOnSecondServePlayer1 = 0
         self.pointsWonOnSecondServePlayer2 = 0
+        
+        self.secondServeAttemptsPlayer1 = 0
+        self.secondServesMadePlayer1 = 0
+        self.secondServeAttemptsPlayer2 = 0
+        self.secondServesMadePlayer2 = 0
+    }
+    
+    /// Human-readable label for the unit shown on the scoreboard
+    /// Super set uses "points" semantically; regular formats use "games"
+    var scoreUnitLabel: String {
+        format == .superSet ? "PTS" : ""
     }
 }
 
@@ -209,6 +226,30 @@ extension Match {
         return Double(pointsWonOnFirstServePlayer2) / Double(firstServesMadePlayer2) * 100
     }
     
+    /// Second serve percentage for player 1
+    var secondServePercentagePlayer1: Double {
+        guard secondServeAttemptsPlayer1 > 0 else { return 0.0 }
+        return Double(secondServesMadePlayer1) / Double(secondServeAttemptsPlayer1) * 100
+    }
+    
+    /// Second serve percentage for player 2
+    var secondServePercentagePlayer2: Double {
+        guard secondServeAttemptsPlayer2 > 0 else { return 0.0 }
+        return Double(secondServesMadePlayer2) / Double(secondServeAttemptsPlayer2) * 100
+    }
+    
+    /// Points won on second serve percentage for player 1
+    var secondServePointsWonPercentagePlayer1: Double {
+        guard secondServesMadePlayer1 > 0 else { return 0.0 }
+        return Double(pointsWonOnSecondServePlayer1) / Double(secondServesMadePlayer1) * 100
+    }
+    
+    /// Points won on second serve percentage for player 2
+    var secondServePointsWonPercentagePlayer2: Double {
+        guard secondServesMadePlayer2 > 0 else { return 0.0 }
+        return Double(pointsWonOnSecondServePlayer2) / Double(secondServesMadePlayer2) * 100
+    }
+    
     /// Record a serve
     func recordServe(forPlayer1: Bool, firstServe: Bool, made: Bool, pointWon: Bool? = nil) {
         if forPlayer1 {
@@ -220,8 +261,15 @@ extension Match {
                         pointsWonOnFirstServePlayer1 += 1
                     }
                 }
-            } else if made, let pointWon = pointWon, pointWon {
-                pointsWonOnSecondServePlayer1 += 1
+            } else {
+                // Second serve attempt
+                secondServeAttemptsPlayer1 += 1
+                if made {
+                    secondServesMadePlayer1 += 1
+                    if let pointWon = pointWon, pointWon {
+                        pointsWonOnSecondServePlayer1 += 1
+                    }
+                }
             }
         } else {
             if firstServe {
@@ -232,8 +280,15 @@ extension Match {
                         pointsWonOnFirstServePlayer2 += 1
                     }
                 }
-            } else if made, let pointWon = pointWon, pointWon {
-                pointsWonOnSecondServePlayer2 += 1
+            } else {
+                // Second serve attempt
+                secondServeAttemptsPlayer2 += 1
+                if made {
+                    secondServesMadePlayer2 += 1
+                    if let pointWon = pointWon, pointWon {
+                        pointsWonOnSecondServePlayer2 += 1
+                    }
+                }
             }
         }
         updatedAt = Date()

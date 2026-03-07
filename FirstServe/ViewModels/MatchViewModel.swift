@@ -115,7 +115,7 @@ final class MatchViewModel {
         undoStack.append(snapshot)
         
         // Check if we're in a tiebreak
-        if set.isTiebreak() {
+        if set.isTiebreak(format: match.format) {
             awardTiebreakPoint(toPlayer1: toPlayer1, match: match, set: set, game: game)
         } else {
             awardRegularPoint(toPlayer1: toPlayer1, match: match, set: set, game: game)
@@ -145,6 +145,9 @@ final class MatchViewModel {
                     if let newSet = match.currentSet {
                         newSet.startNewGame(serverIsPlayer1: player1ServesFirst)
                     }
+                } else {
+                    // Match completed naturally — stamp completedAt
+                    match.completedAt = Date()
                 }
             } else if set.isTiebreak(format: match.format) {
                 // We just reached 6-6 (or 10-10 for super set), start tiebreak
@@ -191,6 +194,9 @@ final class MatchViewModel {
                     let tiebreakFirstServer = game.serverIsPlayer1
                     newSet.startNewGame(serverIsPlayer1: !tiebreakFirstServer)
                 }
+            } else {
+                // Match completed via tiebreak — stamp completedAt
+                match.completedAt = Date()
             }
         } else {
             // Handle serve rotation in tiebreak
