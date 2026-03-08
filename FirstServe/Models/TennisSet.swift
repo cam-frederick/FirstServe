@@ -30,16 +30,16 @@ final class TennisSet {
     
     /// Is the set complete?
     func isComplete(format: MatchFormat? = nil) -> Bool {
-        // Super set: first to 10 games, win by 2
+        // Super set: first to 8 games, win by 2
         if let format = format, format == .superSet {
-            if gamesPlayer1 >= 10 && gamesPlayer1 - gamesPlayer2 >= 2 {
+            if gamesPlayer1 >= 8 && gamesPlayer1 - gamesPlayer2 >= 2 {
                 return true
             }
-            if gamesPlayer2 >= 10 && gamesPlayer2 - gamesPlayer1 >= 2 {
+            if gamesPlayer2 >= 8 && gamesPlayer2 - gamesPlayer1 >= 2 {
                 return true
             }
-            // Super set tiebreak at 10-10
-            if gamesPlayer1 == 11 || gamesPlayer2 == 11 {
+            // Super set tiebreak at 8-8
+            if gamesPlayer1 == 9 || gamesPlayer2 == 9 {
                 return true
             }
             return false
@@ -74,7 +74,7 @@ final class TennisSet {
     /// Is a tiebreak in progress?
     func isTiebreak(format: MatchFormat? = nil) -> Bool {
         if let format = format, format == .superSet {
-            return gamesPlayer1 == 10 && gamesPlayer2 == 10
+            return gamesPlayer1 == 8 && gamesPlayer2 == 8
         }
         return gamesPlayer1 == 6 && gamesPlayer2 == 6
     }
@@ -109,9 +109,19 @@ final class TennisSet {
 }
 
 extension TennisSet {
+    /// Games sorted by creation order (SwiftData relationships are unordered)
+    var sortedGames: [Game] {
+        games.sorted { $0.gameNumber < $1.gameNumber }
+    }
+
     /// Current game (the last incomplete game, or nil)
     var currentGame: Game? {
-        games.last(where: { !$0.isComplete })
+        sortedGames.last(where: { !$0.isComplete })
+    }
+
+    /// Most recently created game (regardless of completion state)
+    var latestGame: Game? {
+        sortedGames.last
     }
     
     /// Start a new game

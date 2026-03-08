@@ -13,7 +13,8 @@ import SwiftData
 struct MatchSummaryView: View {
     @Environment(\.dismiss) private var dismiss
     let match: Match
-    
+    @State private var showingStats = false
+
     private var player1: Player? { match.players.first }
     private var player2: Player? { match.players.last }
     
@@ -49,13 +50,45 @@ struct MatchSummaryView: View {
             }
             .navigationTitle("Match Summary")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(FSColors.backgroundDeep, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        showingStats = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chart.bar.fill")
+                                .font(.system(size: 12))
+                            Text("Stats")
+                                .font(FSTypography.label(12))
+                        }
+                        .foregroundStyle(FSColors.textPrimary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(FSColors.backgroundCard)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(FSColors.lineWhite.opacity(0.1), lineWidth: 1)
+                                )
+                        )
                     }
-                    .foregroundStyle(FSColors.textPrimary)
                 }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Done")
+                            .font(FSTypography.label(14))
+                            .foregroundStyle(FSColors.textPrimary)
+                    }
+                }
+            }
+            .sheet(isPresented: $showingStats) {
+                StatsView(match: match)
             }
         }
         .preferredColorScheme(.dark)
@@ -133,7 +166,7 @@ struct MatchSummaryView: View {
                 )
                 
                 // Format badge
-                Text(match.format.rawValue)
+                Text(match.format.displayName)
                     .font(FSTypography.label(10))
                     .tracking(0.5)
                     .foregroundStyle(FSColors.textSecondary)
@@ -283,6 +316,9 @@ struct MatchSummaryView: View {
                 .tracking(2)
                 .foregroundStyle(FSColors.textMuted)
             
+            // Total points won
+            totalPointsCard
+
             // Serve percentage donut chart
             servePercentageChart
             
@@ -369,6 +405,49 @@ struct MatchSummaryView: View {
         )
     }
     
+    private var totalPointsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Total Points Won")
+                .font(FSTypography.body(15))
+                .fontWeight(.semibold)
+                .foregroundStyle(FSColors.textPrimary)
+
+            HStack(spacing: 32) {
+                // Player 1
+                VStack(spacing: 8) {
+                    Text("\(match.totalPointsWonPlayer1)")
+                        .font(FSTypography.score(36))
+                        .foregroundStyle(match.totalPointsWonPlayer1 >= match.totalPointsWonPlayer2 ? FSColors.textPrimary : FSColors.textSecondary)
+
+                    Text(player1?.name ?? "P1")
+                        .font(FSTypography.label(11))
+                        .foregroundStyle(FSColors.textSecondary)
+                }
+
+                // Player 2
+                VStack(spacing: 8) {
+                    Text("\(match.totalPointsWonPlayer2)")
+                        .font(FSTypography.score(36))
+                        .foregroundStyle(match.totalPointsWonPlayer2 >= match.totalPointsWonPlayer1 ? FSColors.textPrimary : FSColors.textSecondary)
+
+                    Text(player2?.name ?? "P2")
+                        .font(FSTypography.label(11))
+                        .foregroundStyle(FSColors.textSecondary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(FSColors.backgroundCard)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(FSColors.lineWhite.opacity(0.06), lineWidth: 1)
+                )
+        )
+    }
+
     private var winnersErrorsChart: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Winners vs Unforced Errors")
@@ -623,7 +702,7 @@ struct MatchSummaryView: View {
         }
         
         text += "\(match.scoreString)\n\n"
-        text += "📍 \(match.surface.rawValue) | \(match.format.rawValue)\n"
+        text += "📍 \(match.surface.rawValue) | \(match.format.displayName)\n"
         
         if let completedAt = match.completedAt {
             text += "⏱️ \(formatDuration(from: match.createdAt, to: completedAt))\n\n"

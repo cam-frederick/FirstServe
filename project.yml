@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.firstserve
   deploymentTarget:
     iOS: "18.0"
+    watchOS: "11.0"
   xcodeVersion: "16.2"
   defaultConfig: Debug
   groupSortPosition: top
@@ -12,7 +13,7 @@ settings:
   base:
     SWIFT_VERSION: "5.9"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "QTX695U3Q9"
 
 targets:
   FirstServe:
@@ -22,6 +23,11 @@ targets:
       - path: FirstServe
         excludes:
           - "**/.DS_Store"
+      - path: Shared
+        excludes:
+          - "**/.DS_Store"
+    dependencies:
+      - target: FirstServeWatch
     settings:
       base:
         INFOPLIST_GENERATION_MODE: GeneratedFile
@@ -30,7 +36,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-        PRODUCT_BUNDLE_IDENTIFIER: com.firstserve.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.Cam.FirstServe
         PRODUCT_NAME: FirstServe
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -41,6 +47,30 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_EMIT_LOC_STRINGS: YES
         ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+  FirstServeWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: FirstServeWatch
+        excludes:
+          - "**/.DS_Store"
+      - path: Shared
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        INFOPLIST_GENERATION_MODE: GeneratedFile
+        PRODUCT_BUNDLE_IDENTIFIER: com.Cam.FirstServe.watchkitapp
+        PRODUCT_NAME: FirstServe Watch
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.Cam.FirstServe
+        SWIFT_EMIT_LOC_STRINGS: YES
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
 
   FirstServeTests:
     type: bundle.unit-test
@@ -78,6 +108,19 @@ schemes:
       targets:
         - FirstServeTests
         - FirstServeUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  FirstServeWatch:
+    build:
+      targets:
+        FirstServeWatch: all
+    run:
+      config: Debug
     profile:
       config: Release
     analyze:

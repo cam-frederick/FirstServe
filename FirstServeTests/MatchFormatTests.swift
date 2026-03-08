@@ -43,11 +43,11 @@ final class MatchFormatTests: XCTestCase {
         match.startNewSet()
         let set = match.currentSet!
         
-        // Super set requires first to 10 games, win by 2
-        for _ in 0..<10 {
+        // Super set requires first to 8 games, win by 2
+        for _ in 0..<8 {
             set.gamesPlayer1 += 1
         }
-        for _ in 0..<8 {
+        for _ in 0..<6 {
             set.gamesPlayer2 += 1
         }
         
@@ -63,9 +63,9 @@ final class MatchFormatTests: XCTestCase {
         match.startNewSet()
         let set = match.currentSet!
         
-        // Simulate 10-10 (requires tiebreak)
-        set.gamesPlayer1 = 10
-        set.gamesPlayer2 = 10
+        // Simulate 8-8 (requires tiebreak)
+        set.gamesPlayer1 = 8
+        set.gamesPlayer2 = 8
         
         XCTAssertTrue(set.isTiebreak(format: .superSet))
         XCTAssertFalse(set.isComplete(format: .superSet))

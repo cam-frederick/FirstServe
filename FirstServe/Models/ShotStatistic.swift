@@ -11,6 +11,7 @@ import SwiftData
 /// Type of statistical event
 enum StatType: String, Codable, CaseIterable {
     case winner = "Winner"
+    case forcedError = "Forced Error"
     case unforcedError = "Unforced Error"
 }
 

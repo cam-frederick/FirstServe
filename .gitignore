@@ -35,6 +35,9 @@ Pods/
 *.perspectivev3
 xcuserdata/
 
+# XcodeBuildMCP
+.xcodebuildmcp/
+
 # Other
 *.moved-aside
 *.xccheckout

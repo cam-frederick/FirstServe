@@ -16,10 +16,17 @@ enum CourtSurface: String, Codable, CaseIterable {
     case carpet = "Carpet"
 }
 
+/// Scoring granularity — controls which UI and tracking features are available
+enum ScoringMode: String, Codable, CaseIterable {
+    case gamesOnly = "Games Only"
+    case pointByPoint = "Points"
+    case fullStats = "Full Stats"
+}
+
 /// Match format (best of 3 or 5 sets, or single set/super set)
 enum MatchFormat: String, Codable, CaseIterable {
     case singleSet = "Single Set"
-    case superSet = "Super Set (First to 10)"
+    case superSet = "Super Set (First to 8)"
     case bestOf3 = "Best of 3"
     case bestOf5 = "Best of 5"
     
@@ -31,6 +38,14 @@ enum MatchFormat: String, Codable, CaseIterable {
             return 2
         case .bestOf5:
             return 3
+        }
+    }
+
+    /// Display name for UI — keeps raw values stable for SwiftData schema
+    var displayName: String {
+        switch self {
+        case .superSet: return "Super Set (First to 8)"
+        default: return rawValue
         }
     }
 }
@@ -50,12 +65,13 @@ final class Match {
     var notes: String?
     
     /// Scoring configuration
+    var scoringMode: ScoringMode
     var scoringStyle: ScoringStyle
     var finalSetTiebreakType: TiebreakType?
     var regularTiebreakType: TiebreakType
     
     /// Players (should be exactly 2)
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .nullify)
     var players: [Player]
     
     /// Sets in this match
@@ -87,6 +103,12 @@ final class Match {
     var secondServesMadePlayer1: Int
     var secondServeAttemptsPlayer2: Int
     var secondServesMadePlayer2: Int
+
+    /// Break point tracking (as returner)
+    var breakPointsWonPlayer1: Int
+    var breakPointsWonPlayer2: Int
+    var breakPointsFacedPlayer1: Int
+    var breakPointsFacedPlayer2: Int
     
     /// Detailed shot statistics
     @Relationship(deleteRule: .cascade)
@@ -135,6 +157,7 @@ final class Match {
         player2: Player,
         format: MatchFormat,
         surface: CourtSurface,
+        scoringMode: ScoringMode = .fullStats,
         scoringStyle: ScoringStyle = .advantage,
         regularTiebreakType: TiebreakType = .regular,
         finalSetTiebreakType: TiebreakType? = nil
@@ -144,6 +167,7 @@ final class Match {
         self.updatedAt = Date()
         self.format = format
         self.surface = surface
+        self.scoringMode = scoringMode
         self.scoringStyle = scoringStyle
         self.regularTiebreakType = regularTiebreakType
         self.finalSetTiebreakType = finalSetTiebreakType
@@ -173,6 +197,11 @@ final class Match {
         self.secondServesMadePlayer1 = 0
         self.secondServeAttemptsPlayer2 = 0
         self.secondServesMadePlayer2 = 0
+
+        self.breakPointsWonPlayer1 = 0
+        self.breakPointsWonPlayer2 = 0
+        self.breakPointsFacedPlayer1 = 0
+        self.breakPointsFacedPlayer2 = 0
     }
     
     /// Human-readable label for the unit shown on the scoreboard
@@ -200,8 +229,34 @@ extension Match {
         updatedAt = Date()
     }
     
+    // MARK: - Total Points Won
+
+    /// Total points won by player 1 (summed from all games + tiebreaks)
+    var totalPointsWonPlayer1: Int {
+        var total = 0
+        for set in sets {
+            for game in set.games {
+                total += game.pointsPlayer1
+            }
+            total += set.tiebreakScorePlayer1 ?? 0
+        }
+        return total
+    }
+
+    /// Total points won by player 2 (summed from all games + tiebreaks)
+    var totalPointsWonPlayer2: Int {
+        var total = 0
+        for set in sets {
+            for game in set.games {
+                total += game.pointsPlayer2
+            }
+            total += set.tiebreakScorePlayer2 ?? 0
+        }
+        return total
+    }
+
     // MARK: - Serve Statistics
-    
+
     /// First serve percentage for player 1
     var firstServePercentagePlayer1: Double {
         guard firstServeAttemptsPlayer1 > 0 else { return 0.0 }
@@ -315,13 +370,13 @@ extension Match {
         if playerNumber == 1 {
             if statType == .winner {
                 winnersPlayer1 += 1
-            } else {
+            } else if statType == .unforcedError {
                 unforcedErrorsPlayer1 += 1
             }
         } else {
             if statType == .winner {
                 winnersPlayer2 += 1
-            } else {
+            } else if statType == .unforcedError {
                 unforcedErrorsPlayer2 += 1
             }
         }
