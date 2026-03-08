@@ -11,6 +11,15 @@ import SwiftData
 @main
 struct FirstServeApp: App {
     @State private var showSplash = true
+    let container: ModelContainer
+
+    init() {
+        let container = try! ModelContainer(
+            for: Match.self, Player.self, TennisSet.self, Game.self, ShotStatistic.self
+        )
+        self.container = container
+        WatchConnectivityService.shared.configure(context: container.mainContext)
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -28,6 +37,6 @@ struct FirstServeApp: App {
                 }
             }
         }
-        .modelContainer(for: [Match.self, Player.self, TennisSet.self, Game.self])
+        .modelContainer(container)
     }
 }

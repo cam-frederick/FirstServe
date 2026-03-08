@@ -15,6 +15,9 @@ struct HomeView: View {
     @State private var showingNewMatch = false
     @State private var showingPlayerList = false
     @State private var appearAnimation = false
+    @State private var matchToDelete: Match?
+    @State private var activeMatchToNavigate: Match?
+    @State private var pendingNewMatch: Match?
 
     var body: some View {
         NavigationStack {
@@ -47,6 +50,9 @@ struct HomeView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(FSColors.backgroundDeep, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if !players.isEmpty {
@@ -57,6 +63,8 @@ struct HomeView: View {
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(FSColors.textSecondary)
                         }
+                        .accessibilityLabel("View players")
+                        .accessibilityHint("Double tap to view and manage players")
                     }
                 }
 
@@ -73,13 +81,43 @@ struct HomeView: View {
                                     .fill(FSColors.courtGreen)
                             )
                     }
+                    .accessibilityLabel("New match")
+                    .accessibilityHint("Double tap to start a new match")
                 }
             }
-            .sheet(isPresented: $showingNewMatch) {
-                NewMatchView()
+            .sheet(isPresented: $showingNewMatch, onDismiss: {
+                if let match = pendingNewMatch {
+                    pendingNewMatch = nil
+                    activeMatchToNavigate = match
+                }
+            }) {
+                NewMatchView { newMatch in
+                    pendingNewMatch = newMatch
+                }
+            }
+            .navigationDestination(item: $activeMatchToNavigate) { match in
+                LiveMatchView(match: match)
             }
             .navigationDestination(isPresented: $showingPlayerList) {
                 PlayerListView()
+            }
+            .alert("Delete Match?", isPresented: Binding(
+                get: { matchToDelete != nil },
+                set: { if !$0 { matchToDelete = nil } }
+            )) {
+                Button("Cancel", role: .cancel) {
+                    matchToDelete = nil
+                }
+                Button("Delete", role: .destructive) {
+                    if let match = matchToDelete {
+                        withAnimation {
+                            modelContext.delete(match)
+                        }
+                        matchToDelete = nil
+                    }
+                }
+            } message: {
+                Text("This will permanently delete this match and all its statistics.")
             }
         }
         .preferredColorScheme(.dark)
@@ -87,6 +125,10 @@ struct HomeView: View {
             withAnimation(.easeOut(duration: 0.6)) {
                 appearAnimation = true
             }
+            WatchConnectivityService.shared.sendActiveMatches(matches)
+        }
+        .onChange(of: matches.count) {
+            WatchConnectivityService.shared.sendActiveMatches(matches)
         }
     }
 
@@ -122,6 +164,8 @@ struct HomeView: View {
                             .foregroundStyle(FSColors.textMuted)
                     }
                     .padding(.top, 8)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(matches.count) \(matches.count == 1 ? "match" : "matches") recorded")
                 }
             }
 
@@ -202,6 +246,8 @@ struct HomeView: View {
             }
             .buttonStyle(FSPrimaryButtonStyle())
             .padding(.top, 8)
+            .accessibilityLabel("Start new match")
+            .accessibilityHint("Double tap to create your first tennis match")
 
             Spacer()
         }
@@ -224,6 +270,13 @@ struct HomeView: View {
                         MatchCard(match: match, isActive: true)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            matchToDelete = match
+                        } label: {
+                            Label("Delete Match", systemImage: "trash")
+                        }
+                    }
                     .opacity(appearAnimation ? 1 : 0)
                     .offset(y: appearAnimation ? 0 : 20)
                     .animation(.easeOut(duration: 0.5).delay(Double(index) * 0.1), value: appearAnimation)
@@ -243,6 +296,13 @@ struct HomeView: View {
                         MatchCard(match: match, isActive: false)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            matchToDelete = match
+                        } label: {
+                            Label("Delete Match", systemImage: "trash")
+                        }
+                    }
                     .opacity(appearAnimation ? 1 : 0)
                     .offset(y: appearAnimation ? 0 : 20)
                     .animation(.easeOut(duration: 0.5).delay(Double(index + activeMatches.count) * 0.08), value: appearAnimation)
@@ -285,6 +345,25 @@ struct MatchCard: View {
 
     private var player1: Player? { match.players.first }
     private var player2: Player? { match.players.last }
+    
+    private var accessibilityLabel: String {
+        var label = ""
+        if isActive {
+            label += "Live match. "
+        } else if let winner = match.winner {
+            label += "\(winner.name) won. "
+        }
+        
+        label += "\(player1?.name ?? "Player 1") vs \(player2?.name ?? "Player 2"). "
+        
+        if !match.scoreString.isEmpty {
+            label += "Score: \(match.scoreString). "
+        }
+        
+        label += "Played on \(match.surface.rawValue)"
+        
+        return label
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -295,13 +374,13 @@ struct MatchCard: View {
                     playerRow(
                         name: player1?.name ?? "Player 1",
                         isWinner: match.winner?.id == player1?.id,
-                        isServing: !match.isComplete && (match.currentSet?.currentGame?.serverIsPlayer1 ?? false)
+                        isServing: !match.isComplete && ((match.currentSet?.currentGame ?? match.currentSet?.latestGame)?.serverIsPlayer1 ?? false)
                     )
 
                     playerRow(
                         name: player2?.name ?? "Player 2",
                         isWinner: match.winner?.id == player2?.id,
-                        isServing: !match.isComplete && !(match.currentSet?.currentGame?.serverIsPlayer1 ?? true)
+                        isServing: !match.isComplete && !((match.currentSet?.currentGame ?? match.currentSet?.latestGame)?.serverIsPlayer1 ?? true)
                     )
                 }
 
@@ -323,27 +402,52 @@ struct MatchCard: View {
             }
             .padding(20)
 
-            // Footer with surface and status
-            HStack {
-                // Surface badge
-                HStack(spacing: 6) {
-                    Image(systemName: match.surface.icon)
-                        .font(.system(size: 10))
-                    Text(match.surface.rawValue)
-                        .font(FSTypography.label(10))
-                        .tracking(0.5)
-                }
-                .foregroundStyle(match.surface.themeColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(match.surface.themeColor.opacity(0.15))
+            // Footer with surface, format, rules, and status
+            HStack(spacing: 8) {
+                footerBadge(
+                    icon: match.surface.icon,
+                    label: match.surface.rawValue,
+                    color: match.surface.themeColor
                 )
+
+                footerBadge(
+                    icon: "flag.checkered",
+                    label: formatLabel,
+                    color: FSColors.textSecondary
+                )
+
+                if match.scoringMode == .gamesOnly {
+                    footerBadge(
+                        icon: nil,
+                        label: "Games",
+                        color: FSColors.textMuted
+                    )
+                } else if match.scoringMode == .pointByPoint {
+                    footerBadge(
+                        icon: nil,
+                        label: "Points",
+                        color: FSColors.textMuted
+                    )
+                }
+
+                if match.scoringStyle == .noAdvantage {
+                    footerBadge(
+                        icon: nil,
+                        label: "No-Ad",
+                        color: FSColors.championship
+                    )
+                }
+
+                if match.finalSetTiebreakType != nil {
+                    footerBadge(
+                        icon: nil,
+                        label: "MTB",
+                        color: FSColors.championship
+                    )
+                }
 
                 Spacer()
 
-                // Status
                 if isActive {
                     HStack(spacing: 6) {
                         PulsingDot(color: FSColors.ace)
@@ -380,6 +484,9 @@ struct MatchCard: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: Color.black.opacity(0.3), radius: 15, y: 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Double tap to \(isActive ? "continue" : "view details of") this match")
     }
 
     private func playerRow(name: String, isWinner: Bool, isServing: Bool) -> some View {
@@ -397,6 +504,33 @@ struct MatchCard: View {
                     .foregroundStyle(FSColors.championship)
             }
         }
+    }
+
+    private var formatLabel: String {
+        switch match.format {
+        case .singleSet: return "Single Set"
+        case .superSet: return "Super Set"
+        case .bestOf3: return "Best of 3"
+        case .bestOf5: return "Best of 5"
+        }
+    }
+
+    private func footerBadge(icon: String?, label: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: 9))
+            }
+            Text(label)
+                .font(FSTypography.label(9))
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(color.opacity(0.12))
+        )
     }
 
     private func setScoreColumn(set: TennisSet) -> some View {
@@ -420,8 +554,10 @@ struct MatchCard: View {
 // MARK: - Match Detail View
 
 struct MatchDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     let match: Match
     @State private var appearAnimation = false
+    @State private var showingStats = false
 
     private var player1: Player? { match.players.first }
     private var player2: Player? { match.players.last }
@@ -459,29 +595,121 @@ struct MatchDetailView: View {
                         .offset(y: appearAnimation ? 0 : 20)
                         .animation(.easeOut(duration: 0.5).delay(0.1), value: appearAnimation)
 
-                    // Statistics
-                    statsSection
-                        .opacity(appearAnimation ? 1 : 0)
-                        .offset(y: appearAnimation ? 0 : 20)
-                        .animation(.easeOut(duration: 0.5).delay(0.2), value: appearAnimation)
+                    // Statistics (only for full stats scoring)
+                    if match.scoringMode == .fullStats {
+                        statsSection
+                            .opacity(appearAnimation ? 1 : 0)
+                            .offset(y: appearAnimation ? 0 : 20)
+                            .animation(.easeOut(duration: 0.5).delay(0.2), value: appearAnimation)
+                    }
 
                     // Match info
                     infoSection
                         .opacity(appearAnimation ? 1 : 0)
                         .offset(y: appearAnimation ? 0 : 20)
-                        .animation(.easeOut(duration: 0.5).delay(0.3), value: appearAnimation)
+                        .animation(.easeOut(duration: 0.5).delay(match.scoringMode == .fullStats ? 0.3 : 0.2), value: appearAnimation)
                 }
                 .padding(20)
                 .padding(.bottom, 40)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbarBackground(FSColors.backgroundDeep, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .preferredColorScheme(.dark)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Back")
+                            .font(FSTypography.label(13))
+                    }
+                    .foregroundStyle(FSColors.textSecondary)
+                }
+            }
+
+            ToolbarItem(placement: .principal) {
+                if match.scoringMode != .gamesOnly {
+                    Button {
+                        showingStats = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "chart.bar.fill")
+                                .font(.system(size: 12))
+                            Text("Stats")
+                                .font(FSTypography.label(12))
+                        }
+                        .foregroundStyle(FSColors.textSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(FSColors.backgroundElevated)
+                        )
+                    }
+                    .accessibilityLabel("View match statistics")
+                }
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(item: generateShareText()) {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundStyle(FSColors.textPrimary)
+                }
+            }
+        }
+        .sheet(isPresented: $showingStats) {
+            StatsView(match: match)
+        }
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) {
                 appearAnimation = true
             }
         }
+    }
+    
+    // MARK: - Share Functionality
+    
+    private func generateShareText() -> String {
+        var text = "🎾 FirstServe Match Result\n\n"
+        
+        // Winner announcement
+        if let winner = match.winner {
+            text += "\(winner.name) wins!\n"
+        }
+        
+        // Score
+        text += "\(match.scoreString)\n\n"
+        
+        // Match info
+        text += "📍 \(match.surface.rawValue)\n"
+        text += "🏆 \(match.format.displayName)\n"
+        
+        // Duration if available
+        if let dur = duration {
+            text += "⏱️ \(dur)\n"
+        }
+        
+        // Key stats if notable
+        let totalAces = match.acesPlayer1 + match.acesPlayer2
+        let totalWinners = match.winnersPlayer1 + match.winnersPlayer2
+        
+        if totalAces > 0 {
+            text += "⚡ \(totalAces) aces\n"
+        }
+        if totalWinners > 0 {
+            text += "⭐ \(totalWinners) winners\n"
+        }
+        
+        text += "\n#FirstServe #Tennis"
+        
+        return text
     }
 
     // MARK: - Winner Section
@@ -636,10 +864,16 @@ struct MatchDetailView: View {
                 .foregroundStyle(FSColors.textMuted)
 
             VStack(spacing: 16) {
-                statComparisonRow(label: "Aces", p1: match.acesPlayer1, p2: match.acesPlayer2, icon: "bolt.fill", color: FSColors.ace)
-                statComparisonRow(label: "Double Faults", p1: match.doubleFaultsPlayer1, p2: match.doubleFaultsPlayer2, icon: "xmark", color: FSColors.fault)
-                statComparisonRow(label: "Winners", p1: match.winnersPlayer1, p2: match.winnersPlayer2, icon: "star.fill", color: FSColors.winner)
-                statComparisonRow(label: "Unforced Errors", p1: match.unforcedErrorsPlayer1, p2: match.unforcedErrorsPlayer2, icon: "exclamationmark.triangle.fill", color: FSColors.textMuted)
+                statComparisonRow(label: "Total Points", p1: match.totalPointsWonPlayer1, p2: match.totalPointsWonPlayer2, icon: "circle.fill", color: FSColors.ballYellow)
+                if match.scoringMode == .pointByPoint {
+                    statComparisonRow(label: "Break Points", p1: match.breakPointsWonPlayer1, p2: match.breakPointsWonPlayer2, icon: "arrow.triangle.swap", color: FSColors.textSecondary)
+                }
+                if match.scoringMode == .fullStats {
+                    statComparisonRow(label: "Winners", p1: match.winnersPlayer1, p2: match.winnersPlayer2, icon: "star.fill", color: FSColors.winner)
+                    statComparisonRow(label: "Unforced Errors", p1: match.unforcedErrorsPlayer1, p2: match.unforcedErrorsPlayer2, icon: "exclamationmark.triangle.fill", color: FSColors.fault)
+                    statComparisonRow(label: "Aces", p1: match.acesPlayer1, p2: match.acesPlayer2, icon: "bolt.fill", color: FSColors.ace)
+                    statComparisonRow(label: "Double Faults", p1: match.doubleFaultsPlayer1, p2: match.doubleFaultsPlayer2, icon: "xmark", color: FSColors.textMuted)
+                }
             }
             .padding(20)
             .background(
@@ -721,7 +955,7 @@ struct MatchDetailView: View {
 
             HStack(spacing: 12) {
                 infoChip(icon: match.surface.icon, label: match.surface.rawValue, color: match.surface.themeColor)
-                infoChip(icon: "flag.checkered", label: match.format.rawValue, color: FSColors.textSecondary)
+                infoChip(icon: "flag.checkered", label: match.format.displayName, color: FSColors.textSecondary)
 
                 if let dur = duration {
                     infoChip(icon: "clock", label: dur, color: FSColors.textSecondary)
