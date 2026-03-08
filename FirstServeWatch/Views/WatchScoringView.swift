@@ -83,29 +83,22 @@ struct WatchScoringView: View {
     private func scoringContent(_ match: WatchMatchState) -> some View {
         ScrollView {
             VStack(spacing: 6) {
-                // Scoreboard
+                // Scoreboard (includes inline game score for point-scoring modes)
                 scoreboard(match)
                     .opacity(appear ? 1 : 0)
                     .offset(y: appear ? 0 : 8)
-
-                // Game score (if applicable)
-                if match.scoringMode != "Games Only" {
-                    gameScoreSection(match)
-                        .opacity(appear ? 1 : 0)
-                        .offset(y: appear ? 0 : 8)
-                        .animation(.easeOut(duration: 0.4).delay(0.05), value: appear)
-                }
 
                 // Scoring buttons
                 scoringButtons(match)
                     .opacity(appear ? 1 : 0)
                     .offset(y: appear ? 0 : 8)
-                    .animation(.easeOut(duration: 0.4).delay(0.1), value: appear)
+                    .animation(.easeOut(duration: 0.4).delay(0.05), value: appear)
 
                 // Undo
                 if match.canUndo {
                     undoButton
-                        .opacity(appear ? 1 : 0)
+                        .opacity(session.pendingConfirmation ? 0.4 : (appear ? 1 : 0))
+                        .disabled(session.pendingConfirmation)
                         .animation(.easeOut(duration: 0.3).delay(0.15), value: appear)
                 }
             }
@@ -117,12 +110,26 @@ struct WatchScoringView: View {
     // MARK: - Scoreboard
 
     private func scoreboard(_ match: WatchMatchState) -> some View {
-        VStack(spacing: 0) {
+        let showGameScore = match.scoringMode != "Games Only"
+        let isTiebreak = match.isInTiebreak
+
+        return VStack(spacing: 0) {
+            // Tiebreak label above scoreboard
+            if isTiebreak {
+                Text("TIEBREAK")
+                    .font(WatchType.label(7))
+                    .tracking(1.5)
+                    .foregroundStyle(WatchColors.ace)
+                    .padding(.top, 6)
+                    .padding(.bottom, 2)
+            }
+
             playerScoreRow(
                 name: match.player1Name,
                 sets: match.sets,
                 isPlayer1: true,
-                isServing: match.currentGameScore?.serverIsPlayer1 == true
+                isServing: match.currentGameScore?.serverIsPlayer1 == true,
+                gameScore: showGameScore ? gameScoreText(match, isPlayer1: true) : nil
             )
 
             Rectangle()
@@ -134,21 +141,31 @@ struct WatchScoringView: View {
                 name: match.player2Name,
                 sets: match.sets,
                 isPlayer1: false,
-                isServing: match.currentGameScore?.serverIsPlayer1 == false
+                isServing: match.currentGameScore?.serverIsPlayer1 == false,
+                gameScore: showGameScore ? gameScoreText(match, isPlayer1: false) : nil
             )
         }
+        .scaleEffect(scoreFlash ? 1.02 : 1.0)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(WatchColors.backgroundCard)
+                .fill(isTiebreak
+                      ? WatchColors.ace.opacity(0.08)
+                      : WatchColors.backgroundCard)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(WatchColors.lineWhite.opacity(0.05), lineWidth: 0.5)
+                        .stroke(
+                            isTiebreak
+                            ? WatchColors.ace.opacity(0.2)
+                            : WatchColors.lineWhite.opacity(0.05),
+                            lineWidth: 0.5
+                        )
                 )
         )
     }
 
     private func playerScoreRow(name: String, sets: [WatchSetState],
-                                isPlayer1: Bool, isServing: Bool) -> some View {
+                                isPlayer1: Bool, isServing: Bool,
+                                gameScore: String? = nil) -> some View {
         HStack(spacing: 5) {
             WatchServingDot(isServing: isServing)
 
@@ -169,67 +186,23 @@ struct WatchScoringView: View {
                         .foregroundStyle(isCurrentSet ? WatchColors.textPrimary : WatchColors.textSecondary)
                         .frame(minWidth: 14)
                 }
+
+                // Inline game score after a thin divider
+                if let gameScore {
+                    Rectangle()
+                        .fill(WatchColors.lineWhite.opacity(0.15))
+                        .frame(width: 0.5, height: 14)
+
+                    Text(gameScore)
+                        .font(WatchType.score(14))
+                        .fontWeight(.bold)
+                        .foregroundStyle(WatchColors.ace)
+                        .frame(minWidth: 20)
+                }
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-    }
-
-    // MARK: - Game Score
-
-    private func gameScoreSection(_ match: WatchMatchState) -> some View {
-        VStack(spacing: 3) {
-            // Label
-            if match.isInTiebreak {
-                Text("TIEBREAK")
-                    .font(WatchType.label(7))
-                    .tracking(1.5)
-                    .foregroundStyle(WatchColors.ace)
-            } else {
-                Text("GAME")
-                    .font(WatchType.label(7))
-                    .tracking(1.5)
-                    .foregroundStyle(WatchColors.textMuted)
-            }
-
-            // Score display
-            HStack(spacing: 0) {
-                let p1Score = gameScoreText(match, isPlayer1: true)
-                let p2Score = gameScoreText(match, isPlayer1: false)
-
-                Text(p1Score)
-                    .font(WatchType.score(22))
-                    .foregroundStyle(WatchColors.textPrimary)
-                    .frame(minWidth: 36, alignment: .trailing)
-
-                Text(" : ")
-                    .font(WatchType.score(16))
-                    .foregroundStyle(WatchColors.textMuted)
-
-                Text(p2Score)
-                    .font(WatchType.score(22))
-                    .foregroundStyle(WatchColors.textPrimary)
-                    .frame(minWidth: 36, alignment: .leading)
-            }
-            .scaleEffect(scoreFlash ? 1.06 : 1.0)
-        }
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(match.isInTiebreak
-                      ? WatchColors.ace.opacity(0.08)
-                      : WatchColors.backgroundCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(
-                            match.isInTiebreak
-                            ? WatchColors.ace.opacity(0.2)
-                            : WatchColors.lineWhite.opacity(0.05),
-                            lineWidth: 0.5
-                        )
-                )
-        )
     }
 
     private func gameScoreText(_ match: WatchMatchState, isPlayer1: Bool) -> String {
@@ -246,6 +219,7 @@ struct WatchScoringView: View {
 
     private func scoringButtons(_ match: WatchMatchState) -> some View {
         let isGamesOnly = match.scoringMode == "Games Only"
+        let pending = session.pendingConfirmation
 
         return VStack(spacing: 6) {
             Text(isGamesOnly ? "AWARD GAME" : "AWARD POINT")
@@ -256,34 +230,36 @@ struct WatchScoringView: View {
             HStack(spacing: 6) {
                 scoreButton(
                     name: match.player1Name,
-                    color: WatchColors.hardCourt
+                    color: WatchColors.hardCourt,
+                    disabled: pending
                 ) {
-                    WKInterfaceDevice.current().play(.click)
                     if isGamesOnly {
                         session.awardGame(matchId: matchId, toPlayer1: true)
                     } else {
                         session.awardPoint(matchId: matchId, toPlayer1: true)
                     }
+                    WKInterfaceDevice.current().play(.click)
                     flashScore()
                 }
 
                 scoreButton(
                     name: match.player2Name,
-                    color: WatchColors.clay
+                    color: WatchColors.clay,
+                    disabled: pending
                 ) {
-                    WKInterfaceDevice.current().play(.click)
                     if isGamesOnly {
                         session.awardGame(matchId: matchId, toPlayer1: false)
                     } else {
                         session.awardPoint(matchId: matchId, toPlayer1: false)
                     }
+                    WKInterfaceDevice.current().play(.click)
                     flashScore()
                 }
             }
         }
     }
 
-    private func scoreButton(name: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func scoreButton(name: String, color: Color, disabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: "plus")
@@ -304,16 +280,18 @@ struct WatchScoringView: View {
                             .stroke(color.opacity(0.4), lineWidth: 1)
                     )
             )
+            .opacity(disabled ? 0.4 : 1.0)
         }
         .buttonStyle(.plain)
+        .disabled(disabled)
     }
 
     // MARK: - Undo
 
     private var undoButton: some View {
         Button {
-            WKInterfaceDevice.current().play(.click)
             session.undo(matchId: matchId)
+            WKInterfaceDevice.current().play(.click)
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.uturn.left")

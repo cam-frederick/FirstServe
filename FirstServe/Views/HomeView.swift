@@ -389,8 +389,8 @@ struct MatchCard: View {
                 // Set scores
                 if !match.scoreString.isEmpty {
                     HStack(spacing: 8) {
-                        ForEach(match.sets.indices, id: \.self) { index in
-                            setScoreColumn(set: match.sets[index])
+                        ForEach(match.sortedSets.indices, id: \.self) { index in
+                            setScoreColumn(set: match.sortedSets[index])
                         }
                     }
                 }
@@ -775,7 +775,7 @@ struct MatchDetailView: View {
                     Text("")
                         .frame(width: 100, alignment: .leading)
 
-                    ForEach(match.sets.indices, id: \.self) { index in
+                    ForEach(match.sortedSets.indices, id: \.self) { index in
                         Text("S\(index + 1)")
                             .font(FSTypography.label(10))
                             .foregroundStyle(FSColors.textMuted)
@@ -800,8 +800,8 @@ struct MatchDetailView: View {
                     }
                     .frame(width: 100, alignment: .leading)
 
-                    ForEach(match.sets.indices, id: \.self) { index in
-                        let set = match.sets[index]
+                    ForEach(match.sortedSets.indices, id: \.self) { index in
+                        let set = match.sortedSets[index]
                         let won = set.gamesPlayer1 > set.gamesPlayer2
                         Text("\(set.gamesPlayer1)")
                             .font(FSTypography.score(20))
@@ -830,8 +830,8 @@ struct MatchDetailView: View {
                     }
                     .frame(width: 100, alignment: .leading)
 
-                    ForEach(match.sets.indices, id: \.self) { index in
-                        let set = match.sets[index]
+                    ForEach(match.sortedSets.indices, id: \.self) { index in
+                        let set = match.sortedSets[index]
                         let won = set.gamesPlayer2 > set.gamesPlayer1
                         Text("\(set.gamesPlayer2)")
                             .font(FSTypography.score(20))

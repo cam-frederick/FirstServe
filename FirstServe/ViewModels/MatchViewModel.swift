@@ -399,16 +399,24 @@ final class MatchViewModel {
 
         undoStack.removeLast()
 
-        // If sets were added, remove them back to snapshot state
+        // If sets were added, remove the most recently created ones
         while match.sets.count > snapshot.setCount {
-            match.sets.removeLast()
+            if let newest = match.sets.max(by: { $0.setNumber < $1.setNumber }) {
+                match.sets.removeAll { $0.id == newest.id }
+            } else {
+                break
+            }
         }
 
-        guard let set = match.sets.last else { return }
+        guard let set = match.sortedSets.last else { return }
 
-        // If games were added, remove them back to snapshot state
+        // If games were added, remove the most recently created ones
         while set.games.count > snapshot.gameCount {
-            set.games.removeLast()
+            if let newest = set.games.max(by: { $0.gameNumber < $1.gameNumber }) {
+                set.games.removeAll { $0.id == newest.id }
+            } else {
+                break
+            }
         }
 
         // Restore set game counts

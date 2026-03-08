@@ -212,14 +212,19 @@ final class Match {
 }
 
 extension Match {
+    /// Sets sorted by creation order (SwiftData relationships are unordered)
+    var sortedSets: [TennisSet] {
+        sets.sorted { $0.setNumber < $1.setNumber }
+    }
+
     /// Current set (the last incomplete set, or nil)
     var currentSet: TennisSet? {
-        sets.last(where: { !$0.isComplete })
+        sortedSets.last(where: { !$0.isComplete })
     }
-    
+
     /// Score summary string (e.g., "6-4, 3-6, 7-5")
     var scoreString: String {
-        sets.map { "\($0.gamesPlayer1)-\($0.gamesPlayer2)" }.joined(separator: ", ")
+        sortedSets.map { "\($0.gamesPlayer1)-\($0.gamesPlayer2)" }.joined(separator: ", ")
     }
     
     /// Start a new set

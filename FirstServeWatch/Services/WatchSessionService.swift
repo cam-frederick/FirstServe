@@ -17,6 +17,13 @@ final class WatchSessionService: NSObject {
     var activeMatches: [WatchMatchState] = []
     var selectedMatch: WatchMatchState?
     var isPhoneReachable = false
+    /// True while waiting for the phone to confirm an optimistic update.
+    var pendingConfirmation = false
+
+    /// History of pre-optimistic states for instant undo on Watch.
+    private var optimisticHistory: [WatchMatchState] = []
+    /// The confirmed state before the most recent phone update, used for undo after confirmation.
+    private var previousConfirmedMatch: WatchMatchState?
 
     override init() {
         super.init()
@@ -39,28 +46,46 @@ final class WatchSessionService: NSObject {
     func awardPoint(matchId: String, toPlayer1: Bool) {
         let previous = selectedMatch
         if let current = selectedMatch, current.id == matchId {
+            optimisticHistory.append(current)
             selectedMatch = optimisticPoint(current, toPlayer1: toPlayer1)
         }
-        sendCommand(["type": "awardPoint", "matchId": matchId, "toPlayer1": toPlayer1],
-                     rollback: previous)
+        pendingConfirmation = true
+        // Defer network work so SwiftUI can re-render with the optimistic state first
+        DispatchQueue.main.async { [self] in
+            sendCommand(["type": "awardPoint", "matchId": matchId, "toPlayer1": toPlayer1],
+                         rollback: previous)
+        }
     }
 
     func awardGame(matchId: String, toPlayer1: Bool) {
         let previous = selectedMatch
         if let current = selectedMatch, current.id == matchId {
+            optimisticHistory.append(current)
             selectedMatch = optimisticGame(current, toPlayer1: toPlayer1)
         }
-        sendCommand(["type": "awardGame", "matchId": matchId, "toPlayer1": toPlayer1],
-                     rollback: previous)
+        pendingConfirmation = true
+        DispatchQueue.main.async { [self] in
+            sendCommand(["type": "awardGame", "matchId": matchId, "toPlayer1": toPlayer1],
+                         rollback: previous)
+        }
     }
 
     func undo(matchId: String) {
-        // Can't predict undo — just disable button to prevent double-tap
-        if var current = selectedMatch, current.id == matchId {
+        // Pop the last pre-optimistic state for instant visual undo
+        if let previous = optimisticHistory.popLast(), previous.id == matchId {
+            selectedMatch = previous
+        } else if let previous = previousConfirmedMatch, previous.id == matchId {
+            // Phone already confirmed — revert to the state before that confirmation
+            selectedMatch = previous
+            previousConfirmedMatch = nil
+        } else if var current = selectedMatch, current.id == matchId {
             current.canUndo = false
             selectedMatch = current
         }
-        sendCommand(["type": "undo", "matchId": matchId])
+        pendingConfirmation = true
+        DispatchQueue.main.async { [self] in
+            sendCommand(["type": "undo", "matchId": matchId])
+        }
     }
 
     private func sendCommand(_ message: [String: Any], rollback: WatchMatchState? = nil) {
@@ -68,6 +93,7 @@ final class WatchSessionService: NSObject {
             logger.warning("Phone not reachable, command dropped")
             // Roll back optimistic update
             if let rollback { selectedMatch = rollback }
+            pendingConfirmation = false
             return
         }
         WCSession.default.sendMessage(message, replyHandler: { [weak self] reply in
@@ -76,9 +102,9 @@ final class WatchSessionService: NSObject {
             }
         }, errorHandler: { [weak self] error in
             logger.error("sendMessage error: \(error.localizedDescription)")
-            // Roll back optimistic update on failure
-            if let rollback {
-                DispatchQueue.main.async { self?.selectedMatch = rollback }
+            DispatchQueue.main.async {
+                if let rollback { self?.selectedMatch = rollback }
+                self?.pendingConfirmation = false
             }
         })
     }
@@ -120,15 +146,15 @@ final class WatchSessionService: NSObject {
             switch theirScore {
             case "40":
                 // Deuce → Ad
-                if toPlayer1 { gs.player1Score = "Ad" } else { gs.player2Score = "Ad" }
-            case "Ad":
+                if toPlayer1 { gs.player1Score = "AD" } else { gs.player2Score = "AD" }
+            case "AD":
                 // Back to deuce
                 gs.player1Score = "40"
                 gs.player2Score = "40"
             default:
                 gameWon = true
             }
-        case "Ad":
+        case "AD":
             gameWon = true
         default:
             break // unknown score string, leave unchanged
@@ -225,7 +251,12 @@ final class WatchSessionService: NSObject {
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let state = try? JSONDecoder().decode(WatchMatchState.self, from: data) else { return }
 
+        // Save current confirmed state so undo can revert to it
+        previousConfirmedMatch = selectedMatch
         selectedMatch = state
+        // Phone reply is authoritative — clear optimistic state
+        optimisticHistory.removeAll()
+        pendingConfirmation = false
 
         // Update in the active list
         if let idx = activeMatches.firstIndex(where: { $0.id == state.id }) {

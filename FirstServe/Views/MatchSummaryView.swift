@@ -243,7 +243,7 @@ struct MatchSummaryView: View {
                 .foregroundStyle(FSColors.textMuted)
             
             VStack(spacing: 12) {
-                ForEach(Array(match.sets.enumerated()), id: \.offset) { index, set in
+                ForEach(Array(match.sortedSets.enumerated()), id: \.offset) { index, set in
                     setProgressionRow(setNumber: index + 1, set: set)
                 }
             }

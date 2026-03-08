@@ -20,6 +20,8 @@ final class WatchConnectivityService: NSObject {
     private var modelContext: ModelContext?
     /// Cached ViewModels keyed by match UUID string so undo stacks persist.
     private var activeViewModels: [String: MatchViewModel] = [:]
+    /// When true, sendMatchUpdate is suppressed — the Watch command reply handles it.
+    private var isProcessingWatchCommand = false
 
     private override init() {
         super.init()
@@ -73,6 +75,8 @@ final class WatchConnectivityService: NSObject {
     // MARK: - Push single match update
 
     func sendMatchUpdate(_ match: Match, canUndo: Bool) {
+        // Skip when handling a Watch command — the reply already carries the update.
+        guard !isProcessingWatchCommand else { return }
         guard WCSession.default.activationState == .activated else { return }
 
         let state = buildWatchMatchState(from: match, canUndo: canUndo)
@@ -102,7 +106,7 @@ final class WatchConnectivityService: NSObject {
     // MARK: - Build transfer state from a Match model
 
     private func buildWatchMatchState(from match: Match, canUndo: Bool = false) -> WatchMatchState {
-        let sets = match.sets.map { set in
+        let sets = match.sets.sorted(by: { $0.setNumber < $1.setNumber }).map { set in
             WatchSetState(
                 gamesPlayer1: set.gamesPlayer1,
                 gamesPlayer2: set.gamesPlayer2,
@@ -167,6 +171,7 @@ final class WatchConnectivityService: NSObject {
 
         let vm = getOrCreateViewModel(for: match, context: context)
 
+        isProcessingWatchCommand = true
         switch typeStr {
         case "selectMatch":
             break // just return current state
@@ -183,6 +188,7 @@ final class WatchConnectivityService: NSObject {
         default:
             break
         }
+        isProcessingWatchCommand = false
 
         let state = buildWatchMatchState(from: match, canUndo: vm.canUndo)
         if let data = try? JSONEncoder().encode(state),

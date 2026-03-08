@@ -312,12 +312,12 @@ struct LiveMatchView: View {
 
             // Set scores
             HStack(spacing: 12) {
-                ForEach(match.sets.indices, id: \.self) { index in
-                    let set = match.sets[index]
+                ForEach(match.sortedSets.indices, id: \.self) { index in
+                    let set = match.sortedSets[index]
                     let games = isPlayer1 ? set.gamesPlayer1 : set.gamesPlayer2
                     let otherGames = isPlayer1 ? set.gamesPlayer2 : set.gamesPlayer1
                     let won = games > otherGames
-                    let isCurrentSet = index == match.sets.count - 1 && !match.isComplete
+                    let isCurrentSet = index == match.sortedSets.count - 1 && !match.isComplete
 
                     // Determine tiebreak loser score to show as superscript.
                     // Tennis convention: show the loser's tiebreak score next to the "6"
@@ -389,7 +389,7 @@ struct LiveMatchView: View {
         }
         
         // Add set scores
-        let sets = match.sets.enumerated().map { index, set -> String in
+        let sets = match.sortedSets.enumerated().map { index, set -> String in
             let games = isPlayer1 ? set.gamesPlayer1 : set.gamesPlayer2
             return "Set \(index + 1): \(games)"
         }.joined(separator: ", ")
@@ -667,7 +667,7 @@ struct LiveMatchView: View {
     /// final-set tiebreak rules when a `finalSetTiebreakType` is configured.
     private func tiebreakType(for set: TennisSet) -> TiebreakType {
         let totalSetsNeeded = match.format.setsToWin * 2 - 1
-        let isFinalSet = match.sets.count == totalSetsNeeded
+        let isFinalSet = match.sortedSets.count == totalSetsNeeded
         if isFinalSet, let finalType = match.finalSetTiebreakType {
             return finalType
         }
