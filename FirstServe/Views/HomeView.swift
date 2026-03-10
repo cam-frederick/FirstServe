@@ -1033,6 +1033,8 @@ struct MatchDetailView: View {
         let total = max(p1 + p2, 1.0)
         let p1Ratio = CGFloat(p1 / total)
         let p2Ratio = CGFloat(p2 / total)
+        let p1Name = player1?.name ?? "Player 1"
+        let p2Name = player2?.name ?? "Player 2"
 
         return HStack {
             Text("\(p1Int)%")
@@ -1079,6 +1081,8 @@ struct MatchDetailView: View {
                 .foregroundStyle(p2 >= p1 ? FSColors.textPrimary : FSColors.textMuted)
                 .frame(width: 52, alignment: .leading)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(p1Name) \(p1Int)%, \(p2Name) \(p2Int)%")
     }
 
     // MARK: - Shot Breakdown Section
@@ -1170,6 +1174,9 @@ struct MatchDetailView: View {
         let p1 = detailShotCount(player: 1, statType: statType, contact: contact, shotType: shotType)
         let p2 = detailShotCount(player: 2, statType: statType, contact: contact, shotType: shotType)
         let textColor = isHeader ? FSColors.textSecondary : FSColors.textMuted
+        let p1Name = player1?.name ?? "Player 1"
+        let p2Name = player2?.name ?? "Player 2"
+        let trimmedLabel = label.trimmingCharacters(in: .whitespaces)
 
         return HStack {
             Text(label)
@@ -1189,6 +1196,8 @@ struct MatchDetailView: View {
                 .frame(width: 28, alignment: .leading)
                 .padding(.leading, 24)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(trimmedLabel): \(p1Name) \(p1), \(p2Name) \(p2)")
     }
 
     // MARK: - Info Section
