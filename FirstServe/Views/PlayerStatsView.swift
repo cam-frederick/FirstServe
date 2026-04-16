@@ -130,6 +130,13 @@ struct PlayerStatsView: View {
                         .offset(y: appearAnimation ? 0 : 20)
                         .animation(.easeOut(duration: 0.5).delay(0.2), value: appearAnimation)
 
+                    if hasCareerShotData {
+                        shotTendencySection
+                            .opacity(appearAnimation ? 1 : 0)
+                            .offset(y: appearAnimation ? 0 : 20)
+                            .animation(.easeOut(duration: 0.5).delay(0.25), value: appearAnimation)
+                    }
+
                     matchHistorySection
                         .opacity(appearAnimation ? 1 : 0)
                         .offset(y: appearAnimation ? 0 : 20)
@@ -395,6 +402,44 @@ struct PlayerStatsView: View {
                 servePercentageRow(label: "2nd Serve %", stats: secondServeStats)
                 careerDivider
                 servePercentageRow(label: "2nd Serve Pts Won", stats: secondServePtsWon)
+
+                if let bestPct = bestSingleMatchFirstServePct {
+                    careerDivider
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Best 1st Serve %")
+                                .font(FSTypography.label(11))
+                                .foregroundStyle(FSColors.textSecondary)
+                            Text("single match")
+                                .font(FSTypography.label(9))
+                                .foregroundStyle(FSColors.textMuted)
+                        }
+
+                        Spacer()
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(FSColors.ace)
+                            Text(String(format: "%.0f%%", bestPct))
+                                .font(FSTypography.mono(18))
+                                .foregroundStyle(FSColors.ace)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                }
+
+                if totalAces > 0 || totalDoubleFaults > 0 {
+                    careerDivider
+                    HStack {
+                        serveHighlightPill(icon: "bolt.fill", label: "\(totalAces) Aces", color: FSColors.ace)
+                        Spacer()
+                        serveHighlightPill(icon: "xmark", label: "\(totalDoubleFaults) DFs", color: FSColors.fault)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                }
             }
         }
         .background(
@@ -405,6 +450,30 @@ struct PlayerStatsView: View {
                         .stroke(FSColors.lineWhite.opacity(0.06), lineWidth: 1)
                 )
         )
+    }
+
+    private var bestSingleMatchFirstServePct: Double? {
+        let matchesWithServeData = completedMatches.filter { match in
+            let attempts = isPlayer1(in: match) ? match.firstServeAttemptsPlayer1 : match.firstServeAttemptsPlayer2
+            return attempts > 0
+        }
+        guard !matchesWithServeData.isEmpty else { return nil }
+        return matchesWithServeData.map { match in
+            isPlayer1(in: match) ? match.firstServePercentagePlayer1 : match.firstServePercentagePlayer2
+        }.max()
+    }
+
+    private func serveHighlightPill(icon: String, label: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 11))
+            Text(label)
+                .font(FSTypography.label(11))
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(color.opacity(0.12)))
     }
 
     private func servePercentageRow(label: String, stats: (pct: Double, made: Int, total: Int)) -> some View {
@@ -429,6 +498,165 @@ struct PlayerStatsView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
+    }
+
+    // MARK: - Shot Tendency Section
+
+    private var hasCareerShotData: Bool {
+        completedMatches.contains { !$0.shotStatistics.isEmpty }
+    }
+
+    private func careerShotCount(statType: StatType, contact: ContactType, shotType: ShotType?) -> Int {
+        completedMatches.reduce(0) { total, match in
+            let playerNum = isPlayer1(in: match) ? 1 : 2
+            return total + match.shotStatistics.filter {
+                $0.playerNumber == playerNum
+                && $0.statType == statType
+                && (shotType == nil || $0.shotType == shotType)
+                && $0.contactType == contact
+            }.count
+        }
+    }
+
+    private var careerFHWinners: Int { careerShotCount(statType: .winner, contact: .groundstroke, shotType: .forehand) }
+    private var careerBHWinners: Int { careerShotCount(statType: .winner, contact: .groundstroke, shotType: .backhand) }
+    private var careerFHErrors: Int { careerShotCount(statType: .unforcedError, contact: .groundstroke, shotType: .forehand) }
+    private var careerBHErrors: Int { careerShotCount(statType: .unforcedError, contact: .groundstroke, shotType: .backhand) }
+    private var careerVolleyWinners: Int { careerShotCount(statType: .winner, contact: .volley, shotType: nil) }
+    private var careerOverheadWinners: Int { careerShotCount(statType: .winner, contact: .overhead, shotType: nil) }
+
+    private var shotSignatureLabel: String {
+        let fhTotal = careerFHWinners + careerFHErrors
+        let bhTotal = careerBHWinners + careerBHErrors
+        guard fhTotal + bhTotal > 0 else { return "Balanced" }
+        let fhRatio = fhTotal > 0 ? Double(careerFHWinners) / Double(fhTotal) : 0
+        let bhRatio = bhTotal > 0 ? Double(careerBHWinners) / Double(bhTotal) : 0
+        let diff = abs(careerFHWinners - careerBHWinners)
+
+        if diff < 2 { return "Balanced" }
+        if careerFHWinners > careerBHWinners {
+            return fhRatio > 0.55 ? "Forehand Dominant" : "Forehand Preferred"
+        } else {
+            return bhRatio > 0.55 ? "Backhand Dominant" : "Backhand Preferred"
+        }
+    }
+
+    private var shotTendencySection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("SHOT TENDENCY")
+                .font(FSTypography.label(10))
+                .tracking(2)
+                .foregroundStyle(FSColors.textMuted)
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 14)
+
+            VStack(spacing: 0) {
+                // Signature badge
+                HStack {
+                    Text("Signature")
+                        .font(FSTypography.label(11))
+                        .foregroundStyle(FSColors.textSecondary)
+                    Spacer()
+                    Text(shotSignatureLabel)
+                        .font(FSTypography.label(12))
+                        .foregroundStyle(FSColors.championship)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(FSColors.championship.opacity(0.12)))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+
+                careerDivider
+
+                // Winners row
+                shotTendencyRow(
+                    label: "FH Winners",
+                    value: careerFHWinners,
+                    vsLabel: "BH Winners",
+                    vsValue: careerBHWinners,
+                    color: FSColors.winner
+                )
+
+                careerDivider
+
+                shotTendencyRow(
+                    label: "FH Errors",
+                    value: careerFHErrors,
+                    vsLabel: "BH Errors",
+                    vsValue: careerBHErrors,
+                    color: FSColors.fault
+                )
+
+                if careerVolleyWinners + careerOverheadWinners > 0 {
+                    careerDivider
+                    HStack {
+                        Text("Net Winners")
+                            .font(FSTypography.label(11))
+                            .foregroundStyle(FSColors.textSecondary)
+                        Spacer()
+                        HStack(spacing: 10) {
+                            Text("\(careerVolleyWinners) V")
+                                .font(FSTypography.mono(13))
+                                .foregroundStyle(FSColors.textPrimary)
+                            Text("\(careerOverheadWinners) OH")
+                                .font(FSTypography.mono(13))
+                                .foregroundStyle(FSColors.textPrimary)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(FSColors.backgroundCard)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(FSColors.lineWhite.opacity(0.06), lineWidth: 1)
+                )
+        )
+    }
+
+    private func shotTendencyRow(label: String, value: Int, vsLabel: String, vsValue: Int, color: Color) -> some View {
+        let total = max(value + vsValue, 1)
+        let ratio = CGFloat(value) / CGFloat(total)
+
+        return VStack(spacing: 6) {
+            HStack {
+                Text(label)
+                    .font(FSTypography.label(11))
+                    .foregroundStyle(value >= vsValue ? FSColors.textPrimary : FSColors.textSecondary)
+                Spacer()
+                Text(vsLabel)
+                    .font(FSTypography.label(11))
+                    .foregroundStyle(vsValue > value ? FSColors.textPrimary : FSColors.textSecondary)
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(FSColors.backgroundElevated)
+                    Capsule()
+                        .fill(color.opacity(0.7))
+                        .frame(width: geo.size.width * ratio)
+                }
+            }
+            .frame(height: 6)
+
+            HStack {
+                Text("\(value)")
+                    .font(FSTypography.mono(15))
+                    .foregroundStyle(color)
+                Spacer()
+                Text("\(vsValue)")
+                    .font(FSTypography.mono(15))
+                    .foregroundStyle(color)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
     }
 
     // MARK: - Match History Section

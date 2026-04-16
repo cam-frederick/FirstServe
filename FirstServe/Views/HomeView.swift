@@ -603,11 +603,27 @@ struct MatchDetailView: View {
                             .animation(.easeOut(duration: 0.5).delay(0.2), value: appearAnimation)
                     }
 
+                    // Serve analytics (fullStats only, when serve data exists)
+                    if match.scoringMode == .fullStats && hasServeData {
+                        serveStatsSection
+                            .opacity(appearAnimation ? 1 : 0)
+                            .offset(y: appearAnimation ? 0 : 20)
+                            .animation(.easeOut(duration: 0.5).delay(0.25), value: appearAnimation)
+                    }
+
+                    // Shot breakdown (fullStats only, when shot data exists)
+                    if match.scoringMode == .fullStats && hasShotData {
+                        shotBreakdownSection
+                            .opacity(appearAnimation ? 1 : 0)
+                            .offset(y: appearAnimation ? 0 : 20)
+                            .animation(.easeOut(duration: 0.5).delay(0.3), value: appearAnimation)
+                    }
+
                     // Match info
                     infoSection
                         .opacity(appearAnimation ? 1 : 0)
                         .offset(y: appearAnimation ? 0 : 20)
-                        .animation(.easeOut(duration: 0.5).delay(match.scoringMode == .fullStats ? 0.3 : 0.2), value: appearAnimation)
+                        .animation(.easeOut(duration: 0.5).delay(match.scoringMode == .fullStats ? 0.35 : 0.2), value: appearAnimation)
                 }
                 .padding(20)
                 .padding(.bottom, 40)
@@ -944,6 +960,246 @@ struct MatchDetailView: View {
         }
     }
 
+    // MARK: - Serve Data Guards
+
+    private var hasServeData: Bool {
+        match.firstServeAttemptsPlayer1 + match.firstServeAttemptsPlayer2 > 0
+    }
+
+    private var hasShotData: Bool {
+        !match.shotStatistics.isEmpty
+    }
+
+    // MARK: - Serve Stats Section
+
+    private var serveStatsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("SERVE STATS")
+                .font(FSTypography.label(11))
+                .tracking(2)
+                .foregroundStyle(FSColors.textMuted)
+
+            VStack(spacing: 16) {
+                percentageStatRow(
+                    label: "1st Serve %",
+                    p1: match.firstServePercentagePlayer1,
+                    p2: match.firstServePercentagePlayer2,
+                    icon: "bolt.fill",
+                    color: FSColors.ace
+                )
+                percentageStatRow(
+                    label: "1st Srv Pts Won",
+                    p1: match.firstServePointsWonPercentagePlayer1,
+                    p2: match.firstServePointsWonPercentagePlayer2,
+                    icon: "checkmark.circle.fill",
+                    color: FSColors.winner
+                )
+                if match.secondServeAttemptsPlayer1 + match.secondServeAttemptsPlayer2 > 0 {
+                    percentageStatRow(
+                        label: "2nd Serve %",
+                        p1: match.secondServePercentagePlayer1,
+                        p2: match.secondServePercentagePlayer2,
+                        icon: "arrow.clockwise",
+                        color: FSColors.textSecondary
+                    )
+                    percentageStatRow(
+                        label: "2nd Srv Pts Won",
+                        p1: match.secondServePointsWonPercentagePlayer1,
+                        p2: match.secondServePointsWonPercentagePlayer2,
+                        icon: "checkmark.circle",
+                        color: FSColors.ballYellow
+                    )
+                }
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(FSColors.backgroundCard.opacity(0.95))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(FSColors.ace.opacity(0.05))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(FSColors.ace.opacity(0.12), lineWidth: 1)
+                    )
+            )
+        }
+    }
+
+    private func percentageStatRow(label: String, p1: Double, p2: Double, icon: String, color: Color) -> some View {
+        let p1Int = Int(round(p1))
+        let p2Int = Int(round(p2))
+        let total = max(p1 + p2, 1.0)
+        let p1Ratio = CGFloat(p1 / total)
+        let p2Ratio = CGFloat(p2 / total)
+        let p1Name = player1?.name ?? "Player 1"
+        let p2Name = player2?.name ?? "Player 2"
+
+        return HStack {
+            Text("\(p1Int)%")
+                .font(FSTypography.score(22))
+                .foregroundStyle(p1 >= p2 ? FSColors.textPrimary : FSColors.textMuted)
+                .frame(width: 52, alignment: .trailing)
+
+            // Progress bar P1
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(FSColors.backgroundElevated)
+                    Capsule()
+                        .fill(color.opacity(0.6))
+                        .frame(width: geo.size.width * p1Ratio)
+                }
+            }
+            .frame(height: 6)
+
+            VStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                    .foregroundStyle(color)
+                Text(label)
+                    .font(FSTypography.label(9))
+                    .foregroundStyle(FSColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(width: 80)
+
+            // Progress bar P2
+            GeometryReader { geo in
+                ZStack(alignment: .trailing) {
+                    Capsule().fill(FSColors.backgroundElevated)
+                    Capsule()
+                        .fill(color.opacity(0.6))
+                        .frame(width: geo.size.width * p2Ratio)
+                }
+            }
+            .frame(height: 6)
+
+            Text("\(p2Int)%")
+                .font(FSTypography.score(22))
+                .foregroundStyle(p2 >= p1 ? FSColors.textPrimary : FSColors.textMuted)
+                .frame(width: 52, alignment: .leading)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(p1Name) \(p1Int)%, \(p2Name) \(p2Int)%")
+    }
+
+    // MARK: - Shot Breakdown Section
+
+    private var shotBreakdownSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("SHOT BREAKDOWN")
+                .font(FSTypography.label(11))
+                .tracking(2)
+                .foregroundStyle(FSColors.textMuted)
+
+            VStack(spacing: 0) {
+                shotCategoryBlock(title: "WINNERS", statType: .winner, accentColor: FSColors.winner)
+
+                Rectangle()
+                    .fill(FSColors.lineWhite.opacity(0.06))
+                    .frame(height: 1)
+                    .padding(.horizontal, 20)
+
+                shotCategoryBlock(title: "UNFORCED ERRORS", statType: .unforcedError, accentColor: FSColors.fault)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(FSColors.backgroundCard)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(FSColors.lineWhite.opacity(0.06), lineWidth: 1)
+                    )
+            )
+        }
+    }
+
+    private func shotCategoryBlock(title: String, statType: StatType, accentColor: Color) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(accentColor)
+                    .frame(width: 3, height: 12)
+                Text(title)
+                    .font(FSTypography.label(9))
+                    .tracking(1.5)
+                    .foregroundStyle(accentColor)
+
+                Spacer()
+
+                Text(player1?.name.prefix(8) ?? "P1")
+                    .font(FSTypography.label(9))
+                    .foregroundStyle(FSColors.textMuted)
+                    .frame(width: 56, alignment: .trailing)
+
+                Text(player2?.name.prefix(8) ?? "P2")
+                    .font(FSTypography.label(9))
+                    .foregroundStyle(FSColors.textMuted)
+                    .frame(width: 56, alignment: .leading)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 14)
+
+            VStack(spacing: 4) {
+                shotDetailRow(label: "Groundstrokes", contact: .groundstroke, shotType: nil, statType: statType, isHeader: true)
+                shotDetailRow(label: "  Forehand", contact: .groundstroke, shotType: .forehand, statType: statType, isHeader: false)
+                shotDetailRow(label: "  Backhand", contact: .groundstroke, shotType: .backhand, statType: statType, isHeader: false)
+
+                Spacer().frame(height: 4)
+
+                shotDetailRow(label: "Volleys", contact: .volley, shotType: nil, statType: statType, isHeader: true)
+                shotDetailRow(label: "  Forehand", contact: .volley, shotType: .forehand, statType: statType, isHeader: false)
+                shotDetailRow(label: "  Backhand", contact: .volley, shotType: .backhand, statType: statType, isHeader: false)
+
+                Spacer().frame(height: 4)
+
+                shotDetailRow(label: "Overheads", contact: .overhead, shotType: nil, statType: statType, isHeader: true)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 14)
+        }
+    }
+
+    private func detailShotCount(player: Int, statType: StatType, contact: ContactType, shotType: ShotType?) -> Int {
+        match.shotStatistics.filter {
+            $0.playerNumber == player
+            && $0.statType == statType
+            && (shotType == nil || $0.shotType == shotType)
+            && $0.contactType == contact
+        }.count
+    }
+
+    private func shotDetailRow(label: String, contact: ContactType, shotType: ShotType?, statType: StatType, isHeader: Bool) -> some View {
+        let p1 = detailShotCount(player: 1, statType: statType, contact: contact, shotType: shotType)
+        let p2 = detailShotCount(player: 2, statType: statType, contact: contact, shotType: shotType)
+        let textColor = isHeader ? FSColors.textSecondary : FSColors.textMuted
+        let p1Name = player1?.name ?? "Player 1"
+        let p2Name = player2?.name ?? "Player 2"
+        let trimmedLabel = label.trimmingCharacters(in: .whitespaces)
+
+        return HStack {
+            Text(label)
+                .font(isHeader ? FSTypography.label(12) : FSTypography.body(11))
+                .foregroundStyle(textColor)
+
+            Spacer()
+
+            Text("\(p1)")
+                .font(FSTypography.mono(13))
+                .foregroundStyle(textColor)
+                .frame(width: 28, alignment: .trailing)
+
+            Text("\(p2)")
+                .font(FSTypography.mono(13))
+                .foregroundStyle(textColor)
+                .frame(width: 28, alignment: .leading)
+                .padding(.leading, 24)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(trimmedLabel): \(p1Name) \(p1), \(p2Name) \(p2)")
+    }
+
     // MARK: - Info Section
 
     private var infoSection: some View {
@@ -953,15 +1209,38 @@ struct MatchDetailView: View {
                 .tracking(2)
                 .foregroundStyle(FSColors.textMuted)
 
-            HStack(spacing: 12) {
-                infoChip(icon: match.surface.icon, label: match.surface.rawValue, color: match.surface.themeColor)
-                infoChip(icon: "flag.checkered", label: match.format.displayName, color: FSColors.textSecondary)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    infoChip(icon: match.surface.icon, label: match.surface.rawValue, color: match.surface.themeColor)
+                    infoChip(icon: "flag.checkered", label: match.format.displayName, color: FSColors.textSecondary)
 
-                if let dur = duration {
-                    infoChip(icon: "clock", label: dur, color: FSColors.textSecondary)
+                    if let dur = duration {
+                        infoChip(icon: "clock", label: dur, color: FSColors.textSecondary)
+                    }
+
+                    Spacer()
                 }
 
-                Spacer()
+                if let location = match.location, !location.isEmpty {
+                    infoChip(icon: "location.fill", label: location, color: FSColors.hardCourt)
+                }
+
+                if let notes = match.notes, !notes.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "note.text")
+                            .font(.system(size: 11))
+                        Text(notes)
+                            .font(FSTypography.label(11))
+                            .lineLimit(2)
+                    }
+                    .foregroundStyle(FSColors.textSecondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(FSColors.textSecondary.opacity(0.10))
+                    )
+                }
             }
         }
     }
