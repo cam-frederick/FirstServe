@@ -1,0 +1,57 @@
+name: Trigger TestFlight Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build (e.g. main, cici/my-branch)'
+        required: true
+        default: 'main'
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Xcode Cloud Build
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_CONTENT: ${{ secrets.ASC_API_KEY_CONTENT }}
+        run: |
+          BRANCH="${{ github.event.inputs.branch }}"
+          WORKFLOW_ID="943B4949-03D6-4FE2-8191-A270C612C746"
+
+          # Generate JWT using Node.js (handles ES256 IEEE P1363 signature format correctly)
+          JWT=$(node -e "
+            const crypto = require('crypto');
+            const keyId = process.env.ASC_API_KEY_ID;
+            const issuerId = process.env.ASC_ISSUER_ID;
+            const privateKey = process.env.ASC_API_KEY_CONTENT;
+            const iat = Math.floor(Date.now() / 1000);
+            const exp = iat + 1200;
+            const header = Buffer.from(JSON.stringify({alg:'ES256',kid:keyId})).toString('base64url');
+            const payload = Buffer.from(JSON.stringify({iss:issuerId,iat,exp,aud:'appstoreconnect-v1'})).toString('base64url');
+            const sig = crypto.sign('SHA256', Buffer.from(header+'.'+payload), {key:privateKey,dsaEncoding:'ieee-p1363'}).toString('base64url');
+            console.log(header+'.'+payload+'.'+sig);
+          ")
+
+          # Get repository ID from workflow
+          WF_RESPONSE=$(curl -s -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/ciWorkflows/$WORKFLOW_ID?include=repository")
+          REPO_ID=$(echo "$WF_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['relationships']['repository']['data']['id'])")
+
+          # Find git reference for the branch
+          REFS_RESPONSE=$(curl -sg -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/scmRepositories/$REPO_ID/gitReferences?limit=100")
+          REF_ID=$(echo "$REFS_RESPONSE" | python3 -c "import sys,json; data=json.load(sys.stdin)['data']; match=next((r['id'] for r in data if r['attributes']['name']=='$BRANCH' and r['attributes']['kind']=='BRANCH'),None); print(match) if match else (print('ERROR: branch not found') or exit(1))")
+
+          # Start the build
+          RESULT=$(curl -s -X POST \
+            -H "Authorization: Bearer $JWT" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":{\"type\":\"ciBuildRuns\",\"relationships\":{\"workflow\":{\"data\":{\"id\":\"$WORKFLOW_ID\",\"type\":\"ciWorkflows\"}},\"sourceBranchOrTag\":{\"data\":{\"id\":\"$REF_ID\",\"type\":\"scmGitReferences\"}}}}}" \
+            "https://api.appstoreconnect.apple.com/v1/ciBuildRuns")
+
+          BUILD_ID=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+          echo "Build started! ID: $BUILD_ID"
+          echo "Branch: $BRANCH"
