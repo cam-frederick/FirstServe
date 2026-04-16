@@ -1077,17 +1077,12 @@ struct LiveMatchView: View {
                         viewModel.recordAce(player1: true)
                         viewModel.awardPoint(toPlayer1: true)
                         pointAwardedHaptic()
-                        // Reset serve state — an ace always ends the point on first serve
-                        isFirstServe = true
-                        showServeIndicator = false
                     },
                     player2Action: {
                         viewModel.prepareUndo()
                         viewModel.recordAce(player1: false)
                         viewModel.awardPoint(toPlayer1: false)
                         pointAwardedHaptic()
-                        isFirstServe = true
-                        showServeIndicator = false
                     }
                 )
 
@@ -1100,17 +1095,12 @@ struct LiveMatchView: View {
                         viewModel.recordDoubleFault(player1: true)
                         viewModel.awardPoint(toPlayer1: false)
                         pointAwardedHaptic()
-                        // Double fault ends the point — reset to first serve for next point
-                        isFirstServe = true
-                        showServeIndicator = false
                     },
                     player2Action: {
                         viewModel.prepareUndo()
                         viewModel.recordDoubleFault(player1: false)
                         viewModel.awardPoint(toPlayer1: true)
                         pointAwardedHaptic()
-                        isFirstServe = true
-                        showServeIndicator = false
                     }
                 )
 

@@ -14,7 +14,6 @@
 		181D9AE4954B91541E8EACDA /* FirstServeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938F31004C7BAED398AE1E45 /* FirstServeApp.swift */; };
 		18B1E29B7308C322A112F0CB /* MatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA22BB4BAC75960B66EDE49B /* MatchTests.swift */; };
 		1A7885256B9E0AFBDF7E223D /* WatchMatchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F60B00763A1D5F3BB467C02 /* WatchMatchState.swift */; };
-		1B349AA6C7C067887352DE44 /* PlayerStatsShotTendencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCDE9AF387CD828F5545CACD /* PlayerStatsShotTendencyTests.swift */; };
 		20DD395ABB63CAA1C50CC0DA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6CA16CD54FB3FC2F226F5A4 /* Assets.xcassets */; };
 		33E6D6E7421EB3118EC9096D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D8B6FDF6293CD0DDF8C5D473 /* Preview Assets.xcassets */; };
 		36E104D16FBF1249A1D74F76 /* LiveMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 609178DB40693DA5722804AC /* LiveMatchView.swift */; };
@@ -49,7 +48,6 @@
 		DE301DF912190A8A81DA7729 /* WatchSessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D377FA3B8A3B69651DB06F /* WatchSessionService.swift */; };
 		DF514B4B8CC7376A4E353802 /* ShotPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E0514EB3874336B7A076E3 /* ShotPickerView.swift */; };
 		EE590F6609E36645DF4066EB /* TennisSetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 575849D90D7B4AABFD11E17C /* TennisSetTests.swift */; };
-		F00B44B705E8EF49609599FE /* MatchDetailStatsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE52703CADBF0E607FD68A3A /* MatchDetailStatsTests.swift */; };
 		F8B2F599BDECF6BC4B5D671E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D18A1C4A9DD5ECA7149CF26 /* HomeView.swift */; };
 /* End PBXBuildFile section */
 
@@ -134,10 +132,8 @@
 		D8426648850EEDCAF8CF87D6 /* ScoringStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoringStyle.swift; sourceTree = "<group>"; };
 		D8B6FDF6293CD0DDF8C5D473 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		DB0FE6BF7EBF6F15B0D04320 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
-		DCDE9AF387CD828F5545CACD /* PlayerStatsShotTendencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStatsShotTendencyTests.swift; sourceTree = "<group>"; };
 		DF68650F5061493FE2A8508E /* Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game.swift; sourceTree = "<group>"; };
 		E52F036E64C27728A5AEEDAE /* NewMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMatchView.swift; sourceTree = "<group>"; };
-		FE52703CADBF0E607FD68A3A /* MatchDetailStatsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchDetailStatsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -154,12 +150,10 @@
 			children = (
 				71B9631E25A999C3D13930CB /* AccessibilityTests.swift */,
 				64D91DF2F26B074EA1F3746C /* GameScoringTests.swift */,
-				FE52703CADBF0E607FD68A3A /* MatchDetailStatsTests.swift */,
 				AB1FF61EDE3F0BABD4240822 /* MatchFormatTests.swift */,
 				ACF92861AAA6F86A4313E888 /* MatchSummaryViewTests.swift */,
 				AA22BB4BAC75960B66EDE49B /* MatchTests.swift */,
 				3031602E6D68429D48122F99 /* NewMatchFormTests.swift */,
-				DCDE9AF387CD828F5545CACD /* PlayerStatsShotTendencyTests.swift */,
 				9933D93A684008F1E5B462F6 /* ServeFlowTests.swift */,
 				9B317953B8A830FB6604E55E /* ServeStatisticsTests.swift */,
 				722E055F3A29F9027D9D7428 /* ShareFunctionalityTests.swift */,
@@ -489,12 +483,10 @@
 			files = (
 				5DC56D2DE88BD805FBF30BF1 /* AccessibilityTests.swift in Sources */,
 				12B23878559381951C98974E /* GameScoringTests.swift in Sources */,
-				F00B44B705E8EF49609599FE /* MatchDetailStatsTests.swift in Sources */,
 				A56C4D858C35B9D0DA86D0CD /* MatchFormatTests.swift in Sources */,
 				ACFA9F83BB1342D5AD058DC0 /* MatchSummaryViewTests.swift in Sources */,
 				18B1E29B7308C322A112F0CB /* MatchTests.swift in Sources */,
 				4F77D71D2B75E8540F5CC76B /* NewMatchFormTests.swift in Sources */,
-				1B349AA6C7C067887352DE44 /* PlayerStatsShotTendencyTests.swift in Sources */,
 				0ECC98B48DE23679044B5FDB /* ServeFlowTests.swift in Sources */,
 				55CD321CD8D45306A1A735C6 /* ServeStatisticsTests.swift in Sources */,
 				52FB4E80E4F6E71F1B641E1B /* ShareFunctionalityTests.swift in Sources */,
@@ -551,7 +543,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.Cam.FirstServe;
@@ -572,13 +564,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FirstServe/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -602,7 +593,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.Cam.FirstServe;
@@ -687,13 +678,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FirstServe/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
