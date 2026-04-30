@@ -1,162 +1,97 @@
 # FirstServe
 
-> *Elegant tennis scoring and stats tracking for iOS*
+> Elegant tennis scoring and stats tracking for iPhone and Apple Watch
 
-[![Platform](https://img.shields.io/badge/platform-iOS%2015.0%2B-blue.svg)](https://www.apple.com/ios/)
+[![Platform](https://img.shields.io/badge/platform-iOS%2018.0%2B-blue.svg)](https://www.apple.com/ios/)
+[![watchOS](https://img.shields.io/badge/watchOS-11.0%2B-blue.svg)](https://www.apple.com/watchos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-3.0-green.svg)](https://developer.apple.com/xcode/swiftui/)
+[![SwiftUI](https://img.shields.io/badge/SwiftUI-100%25-green.svg)](https://developer.apple.com/xcode/swiftui/)
 
-FirstServe is a beautifully designed tennis scoring and statistics app for iPhone and iPad. Built with 100% SwiftUI and SwiftData, it features a premium "Court Nouveau" design system inspired by the world's greatest tennis venues.
+FirstServe is a beautifully designed tennis scoring and statistics app built with 100% SwiftUI and SwiftData. Score matches from your iPhone or Apple Watch, and track your game with comprehensive per-match and aggregate statistics.
 
-## ✨ Features
+## Features
 
 ### Match Scoring
-- **Quick Match Start** — Opponent name, court surface, best-of format
-- **Live Scoring** — Tap to score, track aces, double faults, winners, errors
-- **Undo Support** — Reverse mistakes with unlimited undo
-- **Auto-save** — Never lose match progress
-- **Match Completion** — Confetti celebration with final stats
+- **Flexible Formats** — Single Set, Super Set (first to 8), Best of 3, Best of 5
+- **Scoring Modes** — Games only, point-by-point, or full shot statistics
+- **Scoring Styles** — Advantage scoring or No-Ad (sudden death at deuce)
+- **Tiebreak Options** — Standard (7-point), Extended (10-point), or Match Tiebreak
+- **Undo Support** — Full snapshot-based undo; reverses any mistake to the exact prior state
+- **Auto-save** — SwiftData persists every point; nothing is ever lost
 
-### Match History
-- **Comprehensive List** — All past matches with search and filtering
-- **Surface Filter** — Filter by Hard, Clay, Grass, or Carpet
-- **Opponent Search** — Find matches against specific players
-- **Match Details** — Full point-by-point breakdown
-- **Delete Matches** — Swipe to remove completed matches
+### Apple Watch Companion
+- **Score from your wrist** — Full scoring controls on watchOS 11
+- **Real-time sync** — WatchConnectivity keeps iPhone and Watch in lockstep
+- **Optimistic updates** — Watch UI responds immediately; rolls back if phone disagrees
+- **Match list** — Browse and select active matches directly on Watch
 
-### Statistics
-- **Aggregate Stats** — Overall performance across all matches
-- **Opponent-specific Stats** — Head-to-head records
-- **Surface Stats** — Performance breakdown by court type
-- **Win/Loss Record** — Track your tennis journey
-- **Advanced Metrics:**
-  - Aces and double faults
-  - Winners and unforced errors
-  - Service games won
-  - Break points converted
+### Match History & Statistics
+- **Match History** — All past matches with opponent search and surface filtering
+- **Shot-level Stats** — Track aces, double faults, winners, forced/unforced errors by shot type
+- **Aggregate Stats** — Win/loss record, service percentages, break point conversion across all matches
+- **Head-to-head** — Records against specific opponents by surface
 
 ### Accessibility
-- **Full VoiceOver Support** — Complete screen reader compatibility
-- **Dynamic Type** — Respects system text size preferences
-- **Clear Labels** — Descriptive accessibility labels throughout
-- **Semantic Actions** — Custom VoiceOver actions for quick navigation
-- **Reduced Motion** — Respects accessibility preferences
+- Full VoiceOver support with descriptive labels and semantic actions
+- Dynamic Type — respects system text size preferences
+- Reduced Motion — respects accessibility preferences
 
 ### Social Sharing
-- **Share Match Results** — Post victories on social media
-- **Twitter/X Integration** — Pre-formatted tweets with match details
-- **Customizable Messages** — Edit before sharing
-- **Privacy Friendly** — Share only what you want
+- Share match results to Twitter/X with a pre-formatted, editable message
 
-### Design Excellence
-- **"Court Nouveau" Design System** — Premium editorial aesthetic
-- **Tennis-themed Colors** — Wimbledon green, Roland Garros clay, US Open blue
-- **Sophisticated Typography** — Serif headlines, monospace scores
-- **Spring-based Animations** — Smooth, natural motion
-- **Haptic Feedback** — Tactile response for scoring and undo
-- **Match-win Confetti** — Celebratory particle system
-- **Dark Mode** — Dark-first design with adaptive colors
+### Design: "Court Nouveau"
+A dark editorial aesthetic inspired by iconic tennis venues — Wimbledon green, Roland Garros clay, US Open blue — with serif headlines, monospace scores, spring-based animations, and haptic feedback synced to every action.
 
-## 🏗️ Architecture
+## Architecture
 
-### SwiftData Persistence
-- **@Model** — Modern Swift data persistence
-- **Real-time Updates** — UI automatically reflects data changes
-- **Relationships** — Matches linked to opponents and surfaces
-- **Efficient Queries** — Sorted and filtered with SwiftData predicates
+### Data Layer
+- **SwiftData** — All models (`Match`, `Player`, `TennisSet`, `Game`, `ShotStatistic`) use `@Model`
+- **Ordered access** — `@Relationship` arrays are unordered; all code sorts before access via `sortedSets`, `sortedGames`, `currentGame` helpers on the model layer
+- **Cascade deletes** — Sets, games, and shot stats are cleaned up with their parent match
 
-### MVVM Pattern
-- **ViewModels** — Separate business logic from UI
-- **@Observable** — Modern state management with observation framework
-- **Service Layer** — Reusable components for match logic
-- **Clean Separation** — Testable, maintainable code
+### State Management
+- **`@Observable`** — `MatchViewModel` and Watch services use the modern Swift observation framework
+- **Snapshot-based undo** — `PointSnapshot` captures full game state before each point; undo restores the entire snapshot
 
-### File Structure
+### Watch Sync
+- **Phone is source of truth** — Watch sends commands; phone applies them and broadcasts the new state
+- **Optimistic updates** — Watch applies the expected outcome immediately, then rolls back if the phone's confirmed state differs
+- **`WatchMatchState`** — Lightweight `Codable` structs shuttle state over `WatchConnectivity` `applicationContext`
+- **Duplicate prevention** — `isProcessingWatchCommand` flag on the phone prevents double-application of commands arriving via both reply and `sendMatchUpdate`
+
+### Project Structure
 ```
 FirstServe/
-├── App/
-│   └── FirstServeApp.swift      # App entry + SwiftData container
+├── FirstServe/                    # iOS app target
+│   ├── FirstServeApp.swift        # SwiftData container setup
+│   ├── Models/                    # @Model types: Match, Player, TennisSet, Game, ShotStatistic
+│   ├── Views/                     # HomeView, LiveMatchView, MatchSummaryView, etc.
+│   ├── ViewModels/                # MatchViewModel (@Observable)
+│   ├── Services/                  # WatchConnectivityService
+│   └── Theme/                     # DesignSystem.swift (Court Nouveau)
 │
-├── Models/ (3 files)
-│   ├── Match.swift              # @Model for match data
-│   ├── Surface.swift            # Court surface enum
-│   └── MatchStatistics.swift    # Computed stats
+├── FirstServeWatch/               # watchOS app target
+│   ├── Views/                     # WatchMatchListView, WatchScoringView
+│   ├── Services/                  # WatchSessionService (optimistic updates)
+│   └── Theme/                     # WatchDesignSystem.swift
 │
-├── ViewModels/ (3 files)
-│   ├── HomeViewModel.swift      # Home screen logic
-│   ├── LiveMatchViewModel.swift # Live scoring logic
-│   └── HistoryViewModel.swift   # Match history logic
+├── Shared/
+│   └── WatchMatchState.swift      # Codable structs shared between targets
 │
-├── Views/
-│   ├── HomeView.swift           # Landing screen
-│   ├── LiveMatchView.swift      # Match in progress
-│   ├── HistoryView.swift        # Past matches
-│   ├── StatsView.swift          # Aggregate statistics
-│   └── Components/              # Reusable UI components
+├── FirstServeTests/               # 12 test files, 30+ unit tests
+├── FirstServeUITests/             # UI automation tests
 │
-├── Services/
-│   └── ScoringService.swift     # Match scoring logic
-│
-├── Extensions/
-│   └── Match+Accessibility.swift
-│
-└── Theme/
-    └── AppTheme.swift           # Court Nouveau design system
-
-FirstServeTests/                 # 30+ unit tests
-FirstServeUITests/               # 6 UI automation tests
+└── project.yml                    # XcodeGen project definition
 ```
 
-## 🎨 Design System: "Court Nouveau"
-
-### Color Palette
-Inspired by iconic tennis venues:
-- **Wimbledon Green** — Primary accent
-- **Roland Garros Clay** — Warm earth tones
-- **US Open Blue** — Cool, modern
-- **Australian Open Court** — Vibrant, energetic
-- **Neutral Surfaces** — Adaptive backgrounds with elevation
-
-### Typography
-- **Headlines** — Serif fonts for editorial feel
-- **Body Text** — San Francisco for readability
-- **Scores** — Monospace for alignment and clarity
-- **Dynamic Type** — Full support for accessibility
-
-### Animations
-- **Spring Physics** — Natural, bouncy motion
-- **Score Transitions** — Animated point changes
-- **Confetti System** — Celebratory particles on match win
-- **Appear Animations** — Staggered offsets for list items
-- **Haptic Feedback** — Synced with visual changes
-
-## 🛠️ Tech Stack
-
-**Core:**
-- SwiftUI (100%, no UIKit)
-- SwiftData (local persistence)
-- Swift 5.9+
-- iOS 15.0+ deployment target
-
-**Features:**
-- @Observable (modern state management)
-- Swift Charts (future: trend visualization)
-- VoiceOver (full accessibility)
-- UIActivityViewController (social sharing)
-- Haptic Engine (tactile feedback)
-
-**Testing:**
-- XCTest (unit + UI tests)
-- 1,012 lines of test coverage
-- 30+ unit tests
-- 6 UI automation tests
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Xcode 15.0+
-- macOS Sonoma or later
-- iPhone or iPad running iOS 15.0+
+- Xcode 16.2+
+- macOS Sequoia or later
+- iPhone running iOS 18.0+
+- Apple Watch running watchOS 11.0+ (for Watch companion)
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) — only needed if modifying `project.yml`
 
 ### Setup
 
@@ -170,161 +105,39 @@ Inspired by iconic tennis venues:
    ```bash
    open FirstServe.xcodeproj
    ```
+   If the `.xcodeproj` is missing (e.g. after a fresh clone that didn't include it), regenerate it:
+   ```bash
+   xcodegen generate
+   ```
 
 3. **Run the app**
-   - Select an iOS simulator or device
-   - Press `Cmd+R` to build and run
+   - Select the `FirstServe` scheme and an iOS 18 simulator or device
+   - Press `Cmd+R`
+   - For Watch: select the `FirstServeWatch` scheme paired to an Apple Watch simulator
 
 ### Testing
 
 ```bash
-# Run all tests in Xcode: Cmd+U
-# Or via command line:
 xcodebuild test -project FirstServe.xcodeproj -scheme FirstServe
 ```
+Or press `Cmd+U` in Xcode. Tests cover scoring logic, set/match completion, tiebreak rules, serve statistics, shot tracking, accessibility labels, match sharing, and form validation.
 
-**Test Coverage:**
-- 30+ unit tests (ViewModels, scoring logic, stats calculations)
-- 6 UI tests (navigation, match flow, history)
-- 1,012 lines of test code
+## Tech Stack
 
-## 🎾 How It Works
+| Layer | Technology |
+|---|---|
+| UI | SwiftUI (100%, no UIKit) |
+| Persistence | SwiftData |
+| State | `@Observable` |
+| Watch sync | WatchConnectivity |
+| Sharing | `UIActivityViewController` |
+| Haptics | UIFeedbackGenerator |
+| Build | XcodeGen (`project.yml` → `.xcodeproj`) |
+| CI | GitHub Actions + Claude Code |
 
-### Starting a Match
+**Deployment targets:** iOS 18.0 / watchOS 11.0  
+**Xcode:** 16.2 | **Swift:** 5.9
 
-1. **Opponent Name** — Enter your opponent's name
-2. **Surface Selection** — Choose Hard, Clay, Grass, or Carpet
-3. **Match Format** — Select best-of-3 or best-of-5 sets
-4. **Start Match** — Tap to begin live scoring
-
-### Live Scoring
-
-- **Tap Score Buttons** — Award points to yourself or opponent
-- **Track Stats** — Record aces, double faults, winners, errors
-- **Undo Mistakes** — Reverse incorrect scores with undo button
-- **View Set Score** — Current set score displayed prominently
-- **Match Progress** — Sets won shown at the top
-
-### Match Completion
-
-1. **Final Point Scored** — Match automatically completes
-2. **Confetti Celebration** — Particle effects for victory
-3. **Stats Summary** — View complete match statistics
-4. **Share Result** — Post to social media (optional)
-5. **Save to History** — Match stored in SwiftData
-
-## 📊 Statistics
-
-### Calculated Metrics
-- **Win/Loss Record** — Overall and by surface
-- **Head-to-head** — Records against specific opponents
-- **Service Stats:**
-  - Aces per match
-  - Double faults per match
-  - Service games won
-- **Groundstroke Stats:**
-  - Winners per match
-  - Unforced errors per match
-- **Break Point Conversion** — Success rate on break opportunities
-
-### Future Premium Stats (planned)
-- First serve percentage
-- Break point save percentage
-- Trend graphs over time
-- PDF match reports
-- Apple Watch quick scoring
-
-## 🚢 App Store Readiness
-
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| Core features (MVP) | ✅ | Complete |
-| Polish (animations, haptics, confetti) | ✅ | Complete |
-| VoiceOver accessibility | ✅ | Complete |
-| Social sharing | ✅ | Complete |
-| Unit tests | ✅ | 30+ passing |
-| UI tests | ✅ | 6 passing |
-| README | ✅ | Comprehensive |
-| App icon | ✅ | Present |
-| Screenshots | ❌ | **Needs capture** |
-| Privacy policy | ❌ | **Needs URL** |
-
-**Ready to ship** pending screenshots and privacy policy setup.
-
-## 📊 Status
-
-**Version:** 1.0 (MVP complete)  
-**Status:** 🎉 **Ship-ready!** All coding complete, awaiting final assets
-
-### Recent Development (February 2026)
-- ✅ MVP features (scoring, stats, history, undo)
-- ✅ Polish (haptic feedback, animations, confetti)
-- ✅ VoiceOver accessibility (comprehensive support)
-- ✅ Social sharing (Twitter/X integration)
-- ✅ Tests (30+ unit, 6 UI)
-- ✅ README (comprehensive documentation)
-
-### Open Pull Requests
-- **PR #5:** Match Result Sharing (1 day old) — ✅ Ready
-- **PR #4:** VoiceOver Accessibility (1 day old) — ✅ Ready
-- **PR #3:** Polish (haptics, animations, confetti) (4 days old) — ✅ Ready
-- **PR #2:** UI tests + README (5 days old) — Superseded by #3
-
-**Recommended Merge Order:**
-1. PR #3 (polish — foundation for other features)
-2. PR #4 (accessibility)
-3. PR #5 (sharing)
-4. Close PR #2 (superseded)
-
-## 💰 Monetization Strategy
-
-### Free Version (v1.0)
-- All core features included
-- Unlimited matches
-- Full statistics
-- No ads
-
-### Premium Features (Future)
-- Apple Watch companion app
-- Visual share cards (image with score)
-- iCloud sync for cross-device
-- Advanced stats (first serve %, trends)
-- PDF match reports
-- Head-to-head graphs
-
-**Price:** $2.99/month or $9.99 lifetime
-
-## 🎯 Roadmap
-
-### v1.0 (Current)
-- [x] Live match scoring
-- [x] Match history
-- [x] Aggregate statistics
-- [x] VoiceOver accessibility
-- [x] Social sharing
-
-### v1.1 (Future)
-- [ ] Apple Watch quick scoring
-- [ ] Visual share card generation
-- [ ] iCloud sync
-- [ ] Dark mode refinements
-
-### v2.0 (Premium)
-- [ ] Advanced statistics
-- [ ] First serve percentage
-- [ ] Break point conversion tracking
-- [ ] Trend graphs (Swift Charts)
-- [ ] PDF match reports
-- [ ] In-app purchases (StoreKit)
-
-## 🤝 Contributing
-
-This is a private repository. For access or questions, contact the repository owner.
-
-## 📝 License
+## License
 
 Private — All rights reserved.
-
----
-
-**Built with ❤️ for tennis players who love tracking their game.**
