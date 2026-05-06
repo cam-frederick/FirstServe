@@ -1,0 +1,52 @@
+disabled_rules:
+  - trailing_whitespace
+  - todo
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - first_where
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - explicit_init
+  - collection_alignment
+  - operator_usage_whitespace
+  - unneeded_parentheses_in_closure_argument
+
+excluded:
+  - FirstServe.xcodeproj
+  - FirstServeWatch.xcodeproj
+  - DerivedData
+  - Pods
+
+line_length:
+  warning: 120
+  error: 160
+  ignores_comments: true
+  ignores_urls: true
+
+type_body_length:
+  warning: 300
+  error: 500
+
+file_length:
+  warning: 400
+  error: 600
+
+function_body_length:
+  warning: 60
+  error: 100
+
+cyclomatic_complexity:
+  warning: 10
+  error: 20
+
+identifier_name:
+  min_length:
+    warning: 2
+  excluded:
+    - id
+    - x
+    - y
+    - dx
+    - dy
